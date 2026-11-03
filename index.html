@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1F1A14">
+<meta name="description" content="Plan reflective practice groups, uni, placement and leave with clashes and bank holidays flagged. Everything stays on your device.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Will's Weeks">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Will's Weeks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a month grid (list of days on phones) with a sticky "coming up" strip above it and a side sheet for editing. */
+:root{
+  --bg:#f3f4f1; --panel:#ffffff; --fg:#1d2420; --muted:#5f6a64; --line:#d6dbd5; --soft:#e7ebe6;
+  --accent:#c2620f; --accent-ink:#ffffff; --danger:#b8322b; --danger-bg:#fbe9e7; --warn:#9a6700; --warn-bg:#fff3cd; --hol:#5a5f9a; --hol-bg:#ebebf7;
+  --today:#c2620f;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --h1:#4c8fd6; --h2:#3f9f6a; --h3:#c2620f; --h4:#9a5bc0; --h5:#c7527e; --h6:#2f9ea8; --h7:#8a8a2a; --h8:#7b6b5a;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171b19; --panel:#202623; --fg:#e8ebe7; --muted:#9aa49d; --line:#343c37; --soft:#2a312d;
+  --accent:#e58a3a; --accent-ink:#1a1a1a; --danger:#ef6b63; --danger-bg:#3a2320; --warn:#e3b341; --warn-bg:#3d3113; --hol:#a9adef; --hol-bg:#2a2b45;
+  --today:#e58a3a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#171b19; --panel:#202623; --fg:#e8ebe7; --muted:#9aa49d; --line:#343c37; --soft:#2a312d;
+  --accent:#e58a3a; --accent-ink:#1a1a1a; --danger:#ef6b63; --danger-bg:#3a2320; --hol:#a9adef; --hol-bg:#2a2b45;
+  --today:#e58a3a; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px;
+  font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 12px}
+button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.danger{color:var(--danger);border-color:var(--danger)}
+button.ghost{border-color:transparent;background:transparent;padding:4px 8px;color:var(--muted)}
+button.ghost:hover{color:var(--fg)}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.field{display:flex;flex-direction:column;gap:0;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.field{flex:1 1 120px}
+.wrap{max-width:1180px;margin:0 auto}
+
+header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:18px 10px}
+header.top h1{font-size:30px;font-weight:700;letter-spacing:-.01em}
+header.top .sub{color:var(--muted);font-size:14px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar .monthname{font-family:var(--display);font-size:20px;font-weight:700;min-width:11ch;text-align:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 10px;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--soft);font-weight:600}
+
+#banner{display:none;margin:8px 0;padding:10px 12px;border-radius:8px;background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);font-weight:600}
+#banner.show{display:block}
+#status{font-size:13px;color:var(--muted)}
+
+.coming{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0 14px}
+.coming h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:8px}
+.coming ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.coming li{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.coming li .when{min-width:11ch;font-weight:600}
+.coming li .what{flex:1 1 200px;min-width:0}
+.coming .ok{color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:4px;vertical-align:middle}
+.tag.clash{background:var(--danger-bg);color:var(--danger)}
+.tag.hol{background:var(--hol-bg);color:var(--hol)}
+.tag.moved{background:var(--soft);color:var(--muted)}
+
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px;align-items:center}
+.legend .key{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--fg);padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel)}
+.legend .key i{width:10px;height:10px;border-radius:3px;display:inline-block;background:var(--c)}
+.legend .key.cyc small{color:var(--muted)}
+
+/* Month grid */
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.grid .dow{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:2px 6px}
+.day{background:var(--panel);border:1px solid var(--line);border-radius:8px;min-height:104px;padding:6px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-width:0}
+.day:hover{border-color:var(--muted)}
+.day.out{opacity:.45}
+.day.hol{background:var(--hol-bg);border-color:var(--hol)}
+.day.leave,.aday.leave{background:repeating-linear-gradient(135deg,var(--panel) 0 6px,var(--soft) 6px 12px);border-color:var(--muted)}
+.chip.leave{background:var(--soft);border-left-color:var(--muted);font-style:italic}
+.day.today .num{background:var(--today);color:var(--accent-ink);border-radius:999px}
+.day .num{font-weight:600;font-size:13px;align-self:flex-start;padding:0 6px;line-height:20px}
+.day .holname{font-size:11px;color:var(--hol);font-weight:700;line-height:1.2}
+.chip{font-size:12px;line-height:1.25;padding:3px 6px 3px 8px;border-radius:5px;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 14%,var(--panel));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.chip.clash{outline:2px solid var(--danger);outline-offset:-1px}
+.chip.mix{outline:2px dashed var(--warn);outline-offset:-1px}
+.tag.mix{background:var(--warn-bg);color:var(--warn)}
+.chip.skip{opacity:.5;text-decoration:line-through}
+.chip.ghost{background:transparent;border:1px dashed var(--c);border-left-width:4px;color:var(--fg);cursor:pointer}
+.chip.ghost:hover{background:color-mix(in srgb,var(--c) 14%,var(--panel))}
+.chip.ghost.clash{outline:2px solid var(--danger);outline-offset:-1px}
+#pbar{position:fixed;left:0;right:0;bottom:0;z-index:18;background:var(--panel);border-top:2px solid var(--accent);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:none;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 -6px 20px rgba(0,0,0,.1)}
+#pbar.show{display:flex}
+#pbar .pt{flex:1 1 240px;min-width:0}
+#pbar .pt small{display:block;color:var(--muted)}
+.chip small{color:var(--muted)}
+.chip b{font-weight:600}
+
+/* Weeks (term overview) view: one row per week, the whole window on one screen */
+.weeks{display:grid;grid-template-columns:7.5ch repeat(7,minmax(0,1fr));gap:3px;overflow-x:auto}
+.weeks .dow{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:2px 6px}
+.weeks .wk{font-size:12px;color:var(--muted);padding:6px 4px 0;line-height:1.2}
+.weeks .wk b{display:block;color:var(--fg)}
+.weeks .wk em{display:block;font-style:normal;font-weight:700;color:var(--accent)}
+.weeks .day{min-height:58px;padding:4px}
+.weeks .day .num{font-size:11px;line-height:16px}
+.weeks .chip{font-size:11px;padding:2px 4px 2px 6px}
+.weeks .holname{font-size:10px}
+@media (max-width:700px){ .weeks{grid-template-columns:5.5ch repeat(7,minmax(0,1fr))} .weeks .chip{font-size:10px} .weeks .chip small{display:none} }
+/* List (agenda) view */
+.agenda{display:grid;gap:6px}
+.agenda.hide{display:none!important}
+.aday{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid;grid-template-columns:7ch 1fr;gap:4px 12px;cursor:pointer}
+.aday.hol{background:var(--hol-bg);border-color:var(--hol)}
+.aday.today .d{color:var(--today)}
+.aday.out{display:none}
+.aday .d{font-weight:700;font-family:var(--display);line-height:1.2}
+.aday .d small{display:block;font-weight:500;color:var(--muted);font-family:var(--body);font-size:12px}
+.aday .items{display:grid;gap:4px;min-width:0}
+.aday .chip{white-space:normal}
+.aday .none{color:var(--muted);font-size:13px}
+.aday .holname{color:var(--hol);font-weight:700;font-size:13px}
+
+/* Side sheet */
+#sheet{position:fixed;top:env(safe-area-inset-top,0px);right:0;bottom:0;width:min(440px,100%);background:var(--panel);border-left:1px solid var(--line);
+  box-shadow:-8px 0 30px rgba(0,0,0,.12);transform:translateX(102%);transition:transform .2s ease;z-index:20;display:flex;flex-direction:column;
+  padding-right:env(safe-area-inset-right,0px)}
+#sheet.open{transform:none}
+#sheet .sh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+#sheet .sh h2{font-size:20px}
+#sheet .sb{padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));overflow:auto;display:grid;gap:12px;align-content:start}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:15;display:none}
+#scrim.open{display:block}
+.item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;border-left:5px solid var(--c)}
+.item .nm{font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.item .meta{color:var(--muted);font-size:13px}
+.item .acts{display:flex;gap:6px;flex-wrap:wrap}
+.item .acts button{padding:4px 10px;font-size:13px}
+.note{font-size:13px;color:var(--muted)}
+.commit-list{display:grid;gap:8px}
+.opt{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg)}
+.opt .ot{flex:1 1 180px;min-width:0}
+.opt .ot b{font-weight:600}
+.opt .ot small{display:block;color:var(--muted)}
+.opt.best{border-color:var(--accent)}
+.opt .bad{color:var(--danger);font-weight:600}
+.checks{display:flex;gap:6px;flex-wrap:wrap}
+.checks label{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:3px 8px;margin:0;color:var(--fg);font-size:13px;cursor:pointer}
+.checks input{width:auto}
+.step{display:grid;grid-template-columns:28px 1fr;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.step .n{width:26px;height:26px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:13px}
+.step.done .n{background:var(--accent);color:var(--accent-ink)}
+.step h3{font-size:15px;margin-bottom:2px}
+.step p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.commit-list .item{cursor:pointer}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches button{width:28px;height:28px;border-radius:50%;padding:0;border:3px solid transparent;background:var(--c)}
+.swatches button[aria-pressed="true"]{border-color:var(--fg)}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.help{font-size:13px;color:var(--muted);margin:0}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;display:grid;gap:10px;justify-items:center}
+.empty h2{font-size:22px}
+.empty p{max-width:46ch;margin:0;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+@media (max-width:700px){
+  header.top h1{font-size:26px}
+  .grid{display:none}
+  #sheet{top:auto;height:min(88%,720px);width:100%;border-left:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;transform:translateY(102%);padding-right:0;
+    padding-left:max(0px,env(safe-area-inset-left,0px))}
+  #sheet.open{transform:none}
+}
+@media (min-width:701px){ .agenda{display:none} .agenda.force{display:grid} .grid.hide{display:none} }
+@media (prefers-reduced-motion: reduce){ #sheet{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Will's Weeks</h1>
+      <div class="sub">Reflective practice, uni, placement and everything else, with clashes and bank holidays flagged.</div>
+    </div>
+    <div class="toolbar">
+      <button id="prev" aria-label="Previous month">&#8249;</button>
+      <div class="monthname" id="monthname">Month</div>
+      <button id="next" aria-label="Next month">&#8250;</button>
+      <button id="today" class="ghost">Today</button>
+      <span class="seg" id="viewseg"><button data-v="month" aria-pressed="true">Month</button><button data-v="weeks" aria-pressed="false">Scroll</button><button data-v="list" aria-pressed="false">List</button></span>
+      <button id="addbtn" class="primary">+ Add</button>
+      <button id="planbtn">Plan clients</button>
+      <button id="leavebtn">Leave</button>
+      <button id="howbtn" class="ghost">How to</button>
+      <button id="manage">Commitments</button>
+    </div>
+  </header>
+
+  <div id="banner" role="alert"></div>
+  <div id="status">Loading your plan…</div>
+
+  <section class="coming" id="coming" hidden>
+    <h2>Coming up in the next 8 weeks</h2>
+    <ul id="cominglist"></ul>
+  </section>
+
+  <div class="legend" id="legend"></div>
+
+  <div id="empty" class="empty" hidden>
+    <h2>Nothing planned yet</h2>
+    <p>Add the fixed things first: uni days and placement. Then use Plan clients to say what each reflective practice group needs (90 minutes to 2 hours, 3 weeks on, 3 off, which days you'd offer) and the page suggests slots that don't clash. The calendar shows every week ahead, marks any clash, and flags bank holidays.</p>
+    <div class="inline"><button class="primary" id="emptyhow">Walk me through it</button><button id="emptyadd">Add a commitment</button><button id="emptyplan">Plan clients</button><button id="examples">Show me with examples</button></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="weeks" id="weeks" hidden></div>
+  <div class="agenda" id="agenda"></div>
+</div>
+
+<div id="pbar" role="status"><div class="pt" id="pbartext"></div><button class="primary" id="pb_useall">Accept all</button><button id="pb_back">Back to the list</button><button class="ghost" id="pb_clear">Clear</button></div>
+<div id="scrim"></div>
+<aside id="sheet" aria-hidden="true">
+  <div class="sh"><h2 id="sheettitle">Edit</h2><button class="ghost" id="closesheet" aria-label="Close">Close</button></div>
+  <div class="sb" id="sheetbody"></div>
+</aside>
+
+<script>
+(function(){
+'use strict';
+// England and Wales bank holidays, from gov.uk/bank-holidays.json, pulled 02/11/2026.
+const HOLIDAYS = {"2026-01-01":"New Year’s Day","2026-04-03":"Good Friday","2026-04-06":"Easter Monday","2026-05-04":"Early May bank holiday","2026-05-25":"Spring bank holiday","2026-08-31":"Summer bank holiday","2026-12-25":"Christmas Day","2026-12-28":"Boxing Day (substitute)","2027-01-01":"New Year’s Day","2027-03-26":"Good Friday","2027-03-29":"Easter Monday","2027-05-03":"Early May bank holiday","2027-05-31":"Spring bank holiday","2027-08-30":"Summer bank holiday","2027-12-27":"Christmas Day (substitute)","2027-12-28":"Boxing Day (substitute)","2028-01-03":"New Year’s Day (substitute)","2028-04-14":"Good Friday","2028-04-17":"Easter Monday","2028-05-01":"Early May bank holiday","2028-05-29":"Spring bank holiday","2028-08-28":"Summer bank holiday","2028-12-25":"Christmas Day","2028-12-26":"Boxing Day"};
+const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const HUES = ["var(--h1)","var(--h2)","var(--h3)","var(--h4)","var(--h5)","var(--h6)","var(--h7)","var(--h8)"];
+const DAY = 86400000;
+
+// ---------- date helpers (local dates, dd/MM/yyyy for people, yyyy-MM-dd for data) ----------
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (d,n) => new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const dow = d => (d.getDay()+6)%7;                     // Monday = 0
+const mondayOf = d => addDays(d,-dow(d));
+const weeksBetween = (a,b) => Math.round((mondayOf(b)-mondayOf(a))/(7*DAY));
+const uk = s => { const d = parse(s); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear(); };
+const ukShort = s => { const d = parse(s); return DOW[dow(d)]+" "+d.getDate()+" "+MONTHS[d.getMonth()].slice(0,3); };
+const mins = t => t ? Number(t.slice(0,2))*60+Number(t.slice(3,5)) : null;
+const todayStr = ymd(new Date());
+const uid = p => p+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+// ---------- state ----------
+const state = { preview:null, weeksStart:null, commitments:{}, exceptions:{}, needs:{}, settings:{}, month:new Date(new Date().getFullYear(), new Date().getMonth(), 1), view:"month", db:null, loaded:false };
+try { const v = localStorage.getItem("ww.view"); if (v==="list"||v==="month"||v==="weeks") state.view = v; } catch(e){}
+if (window.matchMedia && window.matchMedia("(max-width:700px)").matches) state.view = "list";
+
+// ---------- persistence: artifact db when available, this device's cache otherwise ----------
+const CACHE = "ww.cache.v1";
+function readCache(){ try { const c = JSON.parse(localStorage.getItem(CACHE)||"null"); if (c && c.commitments) { state.commitments=c.commitments; state.exceptions=c.exceptions||{}; state.needs=c.needs||{}; state.settings=c.settings||{}; } } catch(e){} }
+function writeCache(){ try { localStorage.setItem(CACHE, JSON.stringify({commitments:state.commitments, exceptions:state.exceptions, needs:state.needs, settings:state.settings, at:Date.now()})); } catch(e){} }
+const queues = {};
+function enqueue(path, fn){ const prev = queues[path]||Promise.resolve(); const p = prev.then(fn, fn); queues[path]=p.catch(()=>{}); return p; }
+function banner(msg){ const b=document.getElementById("banner"); if(!msg){b.classList.remove("show");b.textContent="";return;} b.textContent=msg; b.classList.add("show"); }
+async function save(coll, id, data){
+  const local = state[coll]; local[id] = data; writeCache(); render();
+  if (!state.db) return;
+  try { await enqueue(coll+"/"+id, () => state.db.doc(coll+"/"+id).set(data)); banner(""); }
+  catch(e){ banner("Not saved to the shared plan (" + (e && e.code || "error") + "). It is kept on this device; try again in a moment."); }
+}
+async function remove(coll, id){
+  delete state[coll][id]; writeCache(); render();
+  if (!state.db) return;
+  try { await enqueue(coll+"/"+id, () => state.db.doc(coll+"/"+id).delete()); banner(""); }
+  catch(e){ banner("Not removed from the shared plan (" + (e && e.code || "error") + "). Try again in a moment."); }
+}
+function setStatus(t){ document.getElementById("status").textContent = t; }
+
+async function connect(){
+  readCache(); render();
+  let db = null;
+  try { if (window.claude && window.claude.use) db = await window.claude.use("db"); } catch(e){ db = null; }
+  if (!db){ state.loaded = true; setStatus("Saved in this browser. Back up from Commitments before changing phone."); render(); maybeTour(); return; }
+  state.db = db;
+  let pending = 4;
+  const timer = setTimeout(() => setStatus("The shared plan can't be reached yet. Showing what this device last saw."), 10000);
+  const done = () => { pending--; if (pending<=0){ clearTimeout(timer); state.loaded=true; setStatus(""); writeCache(); render(); maybeTour(); } };
+  const sub = (coll) => db.collection(coll).onSnapshot(snap => {
+    const m = {}; snap.docs.forEach(d => { if (d.exists) m[d.id] = d.data(); });
+    state[coll] = m; writeCache(); render();
+    if (!snap.metadata || !snap.metadata.fromCache) done();
+  }, err => { clearTimeout(timer); state.loaded=true; setStatus("Shared plan unavailable ("+err.code+"). Changes stay on this device."); state.db=null; render(); });
+  sub("commitments"); sub("exceptions"); sub("needs"); sub("settings");
+}
+
+// ---------- the model: what happens on a given day ----------
+// commitment: {name, hue, kind: weekly|cycle|once, day (0-6), start, end, date (once date, or any date in the first ON week of a cycle), on, off, from, until, notes}
+// exception:  {cid, kind: skip|range|move, date, to, newDate, newStart, newEnd, note}
+const NTH = {1:"1st",2:"2nd",3:"3rd",4:"4th","-1":"last"};
+const ordinalOf = d => Math.floor((d.getDate()-1)/7)+1;
+const isLastOf = d => d.getDate()+7 > new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+const nthMatch = (d, nth) => Number(nth) === -1 ? isLastOf(d) : ordinalOf(d) === Number(nth);
+const nthLabel = (nth, day) => `${NTH[String(nth)]||""} ${DOW[day]} monthly`;
+function cycleInfo(c, d){
+  if (c.kind !== "cycle") return null;
+  const on = Math.max(1, Number(c.on)||1), off = Math.max(0, Number(c.off)||0), P = on+off;
+  const w = weeksBetween(parse(c.date), d);
+  const pos = ((w % P) + P) % P;
+  return { on: pos < on, week: pos+1, of: on, w };
+}
+function baseOccurs(c, d){
+  const s = ymd(d);
+  if (c.from && s < c.from) return null;
+  if (c.until && s > c.until) return null;
+  if (c.kind === "leave") return {};
+  if (c.kind === "once") return s === c.date ? {} : null;
+  if (c.kind === "dates") return (c.dates||[]).includes(s) ? {} : null;
+  if (dow(d) !== Number(c.day)) return null;
+  if (c.kind === "weekly") return {};
+  if (c.kind === "monthly") return nthMatch(d, c.nth) ? {} : null;
+  const ci = cycleInfo(c, d);
+  return ci && ci.on ? { cycle: ci } : null;
+}
+function exceptionsFor(cid, s){
+  return Object.entries(state.exceptions).filter(([id,x]) => x.cid===cid && (x.kind==="range" ? (s>=x.date && s<=x.to) : x.date===s)).map(([id,x]) => ({id, ...x}));
+}
+function occurrences(d){
+  const s = ymd(d), out = [];
+  for (const [id,c] of Object.entries(state.commitments)){
+    const b = baseOccurs(c, d);
+    if (b){
+      const ex = exceptionsFor(id, s);
+      const skip = ex.find(x => x.kind==="skip" || x.kind==="range");
+      const move = ex.find(x => x.kind==="move");
+      if (move) continue;                                   // shown on its new date instead
+      out.push({ id, c, start:c.start||"", end:c.end||"", cycle:b.cycle||null, skipped:skip||null, dateStr:s });
+    }
+  }
+  // moved-in occurrences
+  for (const [xid,x] of Object.entries(state.exceptions)){
+    if (x.kind==="move" && x.newDate===s && state.commitments[x.cid]){
+      const c = state.commitments[x.cid];
+      out.push({ id:x.cid, c, start:x.newStart||c.start||"", end:x.newEnd||c.end||"", cycle:null, skipped:null, movedFrom:x.date, moveId:xid, dateStr:s });
+    }
+  }
+  // clashes: overlapping times among live occurrences
+  const live = out.filter(o => !o.skipped && (o.c.kind==="leave" || (o.start && o.end)));
+  const span = o => o.c.kind==="leave" ? [0,1440] : [mins(o.start), mins(o.end)];
+  for (let i=0;i<live.length;i++) for (let j=i+1;j<live.length;j++){
+    const a=live[i], b=live[j], [a0,a1]=span(a), [b0,b1]=span(b);
+    if (a.c.kind==="leave" && b.c.kind==="leave") continue;
+    if (a0 < b1 && b0 < a1){ if (a.c.kind!=="leave") (a.clash=a.clash||[]).push(b.c.name); if (b.c.kind!=="leave") (b.clash=b.clash||[]).push(a.c.name); }
+  }
+  if (cfg().mixFlag !== false){
+    const timed = live.filter(o => o.c.kind!=="leave" && o.c.loc && o.start && o.end);
+    for (let i=0;i<timed.length;i++) for (let j=i+1;j<timed.length;j++){
+      const a=timed[i], b=timed[j]; if (a.c.loc === b.c.loc) continue;
+      const r = locGapOk(mins(a.start), mins(a.end), a.c.loc, mins(b.start), mins(b.end), b.c.loc);
+      if (!r.ok){ (a.mix=a.mix||[]).push(r.reason); (b.mix=b.mix||[]).push(locGapOk(mins(b.start), mins(b.end), b.c.loc, mins(a.start), mins(a.end), a.c.loc).reason); }
+    }
+  }
+  out.sort((a,b) => (a.start||"99").localeCompare(b.start||"99") || a.c.name.localeCompare(b.c.name));
+  return out;
+}
+const holiday = s => HOLIDAYS[s] || null;
+
+// ---------- rendering ----------
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+function timeLabel(o){ return o.start ? (o.start + (o.end ? "–"+o.end : "")) : "all day"; }
+function chip(o, long){
+  const cls = "chip" + (o.clash ? " clash" : "") + (o.mix && !o.clash ? " mix" : "") + (o.skipped ? " skip" : "") + (o.ghost ? " ghost" : "") + (o.c.kind==="leave" ? " leave" : "");
+  const cyc = o.cycle ? ` <small>wk ${o.cycle.week}/${o.cycle.of}</small>` : (o.nth != null || o.c.kind==="monthly") ? ` <small>${NTH[String(o.nth != null ? o.nth : o.c.nth)]||""}</small>` : "";
+  const mv = o.movedFrom ? ` <small>moved from ${uk(o.movedFrom).slice(0,5)}</small>` : "";
+  const t = `<small>${esc(timeLabel(o))}</small>`;
+  const title = (o.clash ? "Clashes with " + o.clash.join(", ") + ". " : "") + (o.mix ? "Travel too tight: " + o.mix.join("; ") + ". " : "") + (o.skipped ? "Skipped" + (o.skipped.note ? ": "+o.skipped.note : "") : "");
+  return `<div class="${cls}" style="--c:${o.c.hue}" title="${esc(title)}"${o.ghost?` data-ghost="${o.nid}" role="button" tabindex="0"`:""}>${o.ghost?'<b>? </b>':''}${o.clash?'<b>! </b>':''}${long?t+" ":""}<b>${esc(o.c.name)}</b>${long?"":" "+t}${cyc}${mv}</div>`;
+}
+function ghosts(d){
+  // suggested entries (not saved yet), drawn dashed; clash-checked against the real day
+  if (!state.preview) return [];
+  const s = ymd(d), real = occurrences(d).filter(o => !o.skipped && (o.c.kind==="leave" || (o.start && o.end))), out = [];
+  for (const [nid, pk] of Object.entries(state.preview.picks)){
+    const n = state.needs[nid], g = pk.o; if (!n) continue;
+    if (dow(d) !== g.day) continue;
+    const from = g.from || n.pfrom || "", until = n.puntil || "";
+    if (from && s < from) continue; if (until && s > until) continue;
+    let o;
+    if (g.nth != null){ if (!nthMatch(d, g.nth)) continue; o = { id:"preview", nid, nth:g.nth, c:{ name:n.name, hue:n.hue }, start:g.start, end:g.end, cycle:null, skipped:null, dateStr:s, ghost:true }; }
+    else { const off = g.off != null ? g.off : n.off, P = n.on+off, pos = ((weeksBetween(parse(g.anchor), d) % P) + P) % P; if (pos >= n.on) continue;
+      o = { id:"preview", nid, c:{ name:n.name, hue:n.hue }, start:g.start, end:g.end, cycle: P>1 ? { week:pos+1, of:n.on } : null, skipped:null, dateStr:s, ghost:true }; }
+    const hits = real.filter(r => r.c.kind==="leave" || (mins(g.start) < mins(r.end) && mins(r.start) < mins(g.end))).map(r => r.c.name);
+    if (hits.length) o.clash = hits;
+    if (n.loc && cfg().mixFlag !== false){ const bad = real.filter(r => r.c.kind!=="leave" && r.c.loc && r.c.loc !== n.loc && r.start && r.end).map(r => locGapOk(mins(g.start), mins(g.end), n.loc, mins(r.start), mins(r.end), r.c.loc)).filter(r => !r.ok).map(r => r.reason); if (bad.length) o.mix = [...new Set(bad)]; }
+    out.push(o);
+  }
+  return out;
+}
+let lastPlan = [];
+function showPreview(){
+  // draw the current picks on one big calendar and show the bar
+  const n = Object.keys(state.preview.picks).length;
+  if (!n){ clearPreview(); return; }
+  closeSheet();
+  state.view = "weeks"; state.weeksStart = null; state.weeksN = 0;
+  let first = null;
+  for (let i=0;i<30*7 && !first;i++){ const d = addDays(mondayOf(new Date()), i); if (ghosts(d).length) first = d; }
+  if (first){ state.month = new Date(first.getFullYear(), first.getMonth(), 1); if (weeksBetween(mondayOf(new Date()), first) >= 8) state.weeksStart = mondayOf(first); }
+  const clashing = Object.entries(state.preview.picks).filter(([nid,pk]) => pk.o.clashes).length;
+  $("pbartext").innerHTML = `<b>${n} suggestion${n===1?"":"s"} on the calendar, drawn dashed.</b><small>Tap any dashed entry to accept it or change it. ${clashing ? `<span class="bad">${clashing} would clash</span>: tap those first. ` : "None of them clash. "}Nothing is saved until you accept.</small>`;
+  $("pbar").classList.add("show");
+  render();
+}
+function suggestAll(){
+  const plan = planAll(); lastPlan = plan;
+  const picks = {};
+  for (const x of plan) if (x.opts[0]) picks[x.id] = { o: x.opts[0] };
+  const missed = plan.filter(x => !x.opts[0]).map(x => x.n.name);
+  if (missed.length) banner("No slot fits for " + missed.join(", ") + ". Widen their days, times or dates."); else banner("");
+  if (!Object.keys(picks).length){ if (!missed.length) banner("Nothing to suggest: add a group or client first."); return; }
+  state.preview = { picks };
+  showPreview();
+}
+function clearPreview(){ state.preview = null; $("pbar").classList.remove("show"); render(); }
+async function acceptPick(nid){
+  const pk = state.preview && state.preview.picks[nid]; if (!pk) return;
+  closeSheet();
+  await useOption(nid, pk.o, true);
+  delete state.preview.picks[nid];
+  if (Object.keys(state.preview.picks).length) showPreview(); else { clearPreview(); setStatus("All suggestions placed. Tap any entry to skip, move or edit it."); }
+}
+async function acceptAll(){
+  const picks = state.preview ? Object.entries(state.preview.picks) : [];
+  state.preview = null; $("pbar").classList.remove("show");
+  for (const [nid, pk] of picks) await useOption(nid, pk.o, true);
+  render();
+  setStatus(`${picks.length} group${picks.length===1?"":"s"} placed on the calendar. Tap any entry to skip, move or edit it.`);
+}
+function optLine(x){
+  return `${x.clashes ? `<span class="bad">${x.clashes} clash${x.clashes===1?"":"es"}</span> with ${esc(x.who.join(", "))}` : "No clashes"}${x.hol.length ? ` · lands on ${esc(x.hol.join("; "))}` : " · clear of bank holidays"}${x.mix ? ` · <span class="bad">${x.mix} day${x.mix===1?"":"s"} without enough travel time</span> (${esc((x.mixWith||[]).join(", "))})` : ""}${x.together ? ` · ${x.together} day${x.together===1?"":"s"} alongside the same location` : ""}${x.load ? ` · shares the day with ${x.load} other session${x.load===1?"":"s"}` : ""} · ${x.count} session${x.count===1?"":"s"}`;
+}
+function optTitle(x){
+  return `${x.cont?`<span class="tag hol">Continues the pattern</span> `:""}<b>${x.nth != null ? NTH[String(x.nth)]+" " : ""}${DOW[x.day]} ${x.sess}</b>${x.sess!==x.start+"–"+x.end?` <small>(${x.start}–${x.end} with travel and gap)</small>`:""}${x.period ? ` <span class="tag moved">every ${x.period} weeks</span>` : ""}, ${x.nth != null ? "every month" : x.cont?`next session ${x.nextOn?uk(x.nextOn):"after the dates"}`:`first on-week ${uk(x.anchor)}`}`;
+}
+function suggestionSheet(nid){
+  const n = state.needs[nid], pk = state.preview && state.preview.picks[nid]; if (!n || !pk) return;
+  const c = cfg(), cur = pk.o;
+  // alternatives, scored around every other current pick
+  const extra = Object.entries(state.preview.picks).filter(([k]) => k!==nid).map(([k,p]) => { const m = state.needs[k]; return { name:m.name, loc:m.loc||"", nth:p.o.nth != null ? p.o.nth : null, date:p.o.anchor, day:p.o.day, start:p.o.start, end:p.o.end, on:m.on, off:(p.o.off != null ? p.o.off : m.off), from:p.o.from||m.pfrom||"", until:m.puntil||"" }; });
+  const win = windowFor(n), fm = fixedMap(extra, win.mon, win.H);
+  const all = candidates(n, fm), cont = continuation(n, fm);
+  const same = (a,b) => a.day===b.day && a.start===b.start && a.anchor===b.anchor && (a.nth||null)===(b.nth||null) && (a.off==null?null:a.off)===(b.off==null?null:b.off);
+  const monthly = n.rep === "monthly";
+  const alts = []; if (cont && !same(cont,cur)) alts.push(cont);
+  for (const o of all){ if (alts.length >= 8) break; if (!same(o,cur) && !alts.some(a => same(a,o))) alts.push(o); }
+  const dayOpts = DOW.map((d,i) => `<option value="${i}" ${i===cur.day?"selected":""}>${d}</option>`).join("");
+  openSheet(n.name, `
+    <div class="item" style="--c:${n.hue}"><div class="nm"><span class="tag moved">Suggested</span></div><div class="meta">${optTitle(cur)}<br>${optLine(cur)}</div>
+      <div class="acts"><button class="primary" data-accept="${nid}">Accept this</button><button data-dropick="${nid}">Leave it out for now</button></div></div>
+    <b>Or switch to</b>
+    <div class="commit-list">${alts.length ? alts.map((x,i) => `<div class="opt"><div class="ot">${optTitle(x)}<small>${optLine(x)}</small></div><button data-sw="${i}">Switch</button></div>`).join("") : '<p class="help">No other slot fits inside the days, times and dates given.</p>'}</div>
+    <details><summary><b>Or set it yourself</b></summary>
+      <form id="cform2" style="display:grid;gap:8px;margin-top:8px">
+        <div class="row"><div class="field"><label for="s_day">Day</label><select id="s_day">${dayOpts}</select></div><div class="field"><label for="s_start">Start (session)</label><input id="s_start" type="time" value="${cur.sess.slice(0,5)}"></div>${monthly ? `<div class="field"><label for="s_nth">Which one</label><select id="s_nth">${[1,2,3,4,-1].map(v => `<option value="${v}" ${v===cur.nth?"selected":""}>${NTH[String(v)]}</option>`).join("")}</select></div>` : `<div class="field"><label for="s_anchor">A date in the first on-week</label><input id="s_anchor" type="date" value="${cur.anchor}"></div>`}</div>
+        <div><button class="primary" type="submit">Show it on the calendar</button></div>
+        <p class="help">It is checked for clashes and holidays like any suggestion, and still needs accepting.</p></form></details>
+    <p class="help">${n.loc?`${esc(n.loc)} · `:""}${n.travel?`${n.travel} min travel + `:""}${n.mins} min${n.gap?` + ${n.gap} min gap`:""} · ${n.rep==="monthly" ? "monthly" : `${n.on} on / ${n.off} off`} · ${(n.days&&n.days.length?n.days:c.days).map(d=>DOW[d]).join(" ")} ${n.earliest||c.start}–${n.latest||c.end}. <button class="ghost" data-needit="${nid}">Change these</button></p>`);
+  $("sheetbody").querySelectorAll("[data-sw]").forEach(b => b.onclick = () => { pk.o = alts[Number(b.dataset.sw)]; showPreview(); });
+  $("cform2").onsubmit = e => { e.preventDefault();
+    const day = Number($("s_day").value), tr = Number(n.travel)||0, len = tr + (Number(n.mins)||120) + (Number(n.gap)||0);
+    const t = mins($("s_start").value) - tr; if (isNaN(t)) return;
+    const nth = monthly ? Number($("s_nth").value) : null;
+    const anchorD = monthly ? cur.anchor : $("s_anchor").value; if (!anchorD) return;
+    const anchor = ymd(mondayOf(parse(anchorD)));
+    const m = scoreSlot(n, fm, anchor, day, t, len, cur.from||"", nth) || { clashes:0, hol:[], load:0, who:[], count:0 };
+    pk.o = { ...m, p:0, anchor, day, nth, off:cur.off, period:cur.period, start:fromMins(t), end:fromMins(t+len), sess:$("s_start").value+"–"+fromMins(t+tr+(Number(n.mins)||120)), from:cur.from||"" };
+    showPreview(); };
+}
+function render(){
+  const m = state.month;
+  $("monthname").textContent = MONTHS[m.getMonth()] + " " + m.getFullYear();
+  document.querySelectorAll("#viewseg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v===state.view)));
+  const has = Object.keys(state.commitments).length > 0;
+  $("empty").hidden = has || !state.loaded;
+  renderLegend();
+  renderComing();
+  const first = new Date(m.getFullYear(), m.getMonth(), 1);
+  const start = mondayOf(first);
+  const last = new Date(m.getFullYear(), m.getMonth()+1, 0);
+  const end = addDays(mondayOf(last), 6);
+  const days = [];
+  for (let d = start; d <= end; d = addDays(d,1)) days.push(d);
+
+  const grid = $("grid"); grid.className = "grid" + (state.view!=="month" ? " hide" : "");
+  const agenda = $("agenda"); agenda.className = "agenda" + (state.view==="list" ? " force" : "");
+  if (state.view !== "list") agenda.classList.add("hide");
+  const weeks = $("weeks"); weeks.hidden = state.view !== "weeks";
+  if (state.view === "weeks"){ renderWeeks(); return; }
+  let g = DOW.map(x => `<div class="dow">${x}</div>`).join("");
+  let a = "";
+  for (const d of days){
+    const s = ymd(d), out = d.getMonth()!==m.getMonth(), hol = holiday(s), occ = occurrences(d).concat(ghosts(d));
+    const cls = (out?" out":"") + (hol?" hol":"") + (occ.some(o => o.c.kind==="leave" && !o.skipped)?" leave":"") + (s===todayStr?" today":"");
+    g += `<div class="day${cls}" data-date="${s}" tabindex="0" role="button" aria-label="${ukShort(s)}">
+      <span class="num">${d.getDate()}</span>${hol?`<div class="holname">${esc(hol)}</div>`:""}
+      ${occ.map(o => chip(o,false)).join("")}</div>`;
+    a += `<div class="aday${cls}" data-date="${s}" tabindex="0" role="button">
+      <div class="d">${DOW[dow(d)]} ${d.getDate()}<small>${hol?"Bank holiday":"&nbsp;"}</small></div>
+      <div class="items">${hol?`<div class="holname">${esc(hol)}</div>`:""}${occ.length?occ.map(o => chip(o,true)).join(""):(hol?"":'<div class="none">Free</div>')}</div></div>`;
+  }
+  grid.innerHTML = g; agenda.innerHTML = a;
+}
+function weeksSpan(){
+  // how many weeks the overview shows: the horizon, or to the latest plan-until date, capped
+  let H = HORIZON;
+  const start = state.weeksStart || mondayOf(new Date());
+  for (const n of Object.values(state.needs)) if (n.puntil) H = Math.max(H, weeksBetween(start, parse(n.puntil)) + 1);
+  for (const c of Object.values(state.commitments)) if (c.until && c.needId) H = Math.max(H, weeksBetween(start, parse(c.until)) + 1);
+  return Math.min(30, Math.max(8, H));
+}
+function renderWeeks(){
+  // one continuous strip of weeks: scroll down and more weeks are added; ‹ adds earlier weeks
+  if (!state.weeksStart) state.weeksStart = mondayOf(new Date());
+  if (!state.weeksN) state.weeksN = weeksSpan();
+  const start = state.weeksStart, H = state.weeksN;
+  let h = `<div class="dow">Week</div>` + DOW.map(x => `<div class="dow">${x}</div>`).join("");
+  for (let w=0; w<H; w++){
+    const mon = addDays(start, w*7), sun = addDays(mon, 6), turn = sun.getDate() <= 7 || (w===0);
+    h += `<div class="wk" data-wk="${ymd(mon)}"><b>${mon.getDate()} ${MONTHS[mon.getMonth()].slice(0,3)}</b>${turn ? `<em>${MONTHS[sun.getMonth()].slice(0,3)} ${sun.getFullYear()}</em>` : "w/c"}</div>`;
+    for (let i=0;i<7;i++){
+      const d = addDays(mon,i), s = ymd(d), hol = holiday(s), occ = occurrences(d).concat(ghosts(d));
+      const cls = (hol?" hol":"") + (occ.some(o => o.c.kind==="leave" && !o.skipped)?" leave":"") + (s===todayStr?" today":"");
+      h += `<div class="day${cls}" data-date="${s}" tabindex="0" role="button" aria-label="${ukShort(s)}"><span class="num">${d.getDate()}</span>${hol?`<div class="holname">${esc(hol)}</div>`:""}${occ.map(o => chip(o,false)).join("")}</div>`;
+    }
+  }
+  $("weeks").innerHTML = h;
+  weeksTitle();
+}
+function weeksTitle(){
+  // the header shows the month of the week at the top of the screen
+  if (state.view !== "weeks") return;
+  const top = ($("weeks").getBoundingClientRect().top < 0) ? [...document.querySelectorAll("#weeks .wk")].find(x => x.getBoundingClientRect().bottom > 60) : document.querySelector("#weeks .wk");
+  if (!top) return;
+  const d = addDays(parse(top.dataset.wk), 6);
+  $("monthname").textContent = MONTHS[d.getMonth()] + " " + d.getFullYear();
+}
+function weeksEarlier(n){
+  // add n weeks above without the page jumping
+  const before = document.documentElement.scrollHeight;
+  state.weeksStart = addDays(state.weeksStart || mondayOf(new Date()), -7*n); state.weeksN = (state.weeksN || weeksSpan()) + n;
+  renderWeeks();
+  window.scrollBy(0, document.documentElement.scrollHeight - before);
+}
+let weeksBusy = false;
+window.addEventListener("scroll", () => {
+  if (state.view !== "weeks" || weeksBusy) return;
+  weeksTitle();
+  const room = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+  if (room < 500 && (state.weeksN||0) < 160){ weeksBusy = true; state.weeksN = (state.weeksN || weeksSpan()) + 8; renderWeeks(); weeksBusy = false; }
+}, { passive:true });
+function renderLegend(){
+  const items = Object.entries(state.commitments).sort((x,y) => x[1].name.localeCompare(y[1].name));
+  $("legend").innerHTML = (items.length ? `<span class="key" style="--c:var(--danger)"><i></i>clash</span><span class="key" style="--c:var(--hol)"><i></i>bank holiday</span><span class="key" style="--c:var(--warn)"><i></i>not enough travel time between locations</span><span class="key" style="--c:var(--muted)"><i style="background:transparent;border:1px dashed var(--muted)"></i>suggested, not saved</span><span class="help">Tap an entry on the calendar to edit it; every group is listed under Commitments.</span>` : "")
+  + (items.some(([id,c]) => /^Example:/.test(c.name)) ? `<button class="danger" id="clearex">Clear the examples</button>` : "");
+  const ce = $("clearex"); if (ce) ce.onclick = clearExamples;
+}
+async function clearExamples(){
+  const ids = Object.entries(state.commitments).filter(([id,c]) => /^Example:/.test(c.name)).map(([id]) => id);
+  for (const [k,x] of Object.entries(state.exceptions)) if (ids.includes(x.cid)) await remove("exceptions", k);
+  for (const id of ids) await remove("commitments", id);
+}
+function renderComing(){
+  const list = [];
+  const start = mondayOf(new Date());
+  for (let i=0;i<56;i++){
+    const d = addDays(start,i), s = ymd(d), hol = holiday(s), occ = occurrences(d);
+    const clashes = occ.filter(o => o.clash);
+    if (clashes.length){
+      const names = [...new Set(clashes.map(o => o.c.name + " " + timeLabel(o)))];
+      list.push({s, html:`<span class="tag clash">Clash</span> ${esc(names.join(" and "))}`});
+    }
+    const mixed = occ.filter(o => o.mix && !o.skipped);
+    if (mixed.length) list.push({s, html:`<span class="tag mix">Travel too tight</span> ${esc([...new Set(mixed.map(o => o.c.name + " (" + o.c.loc + ")"))].join(", "))}`});
+    const lv = occ.find(o => o.c.kind==="leave" && !o.skipped);
+    if (lv){ const on = occ.filter(o => !o.skipped && o.c.kind!=="leave"); if (on.length) list.push({s, html:`<span class="tag clash">On leave</span> ${esc(on.map(o => o.c.name).join(", "))} fall${on.length===1?"s":""} in ${esc(lv.c.name)}`}); }
+    if (hol){
+      const live = occ.filter(o => !o.skipped && o.c.kind!=="leave");
+      const txt = live.length ? `${esc(live.map(o => o.c.name).join(", "))} fall${live.length===1?"s":""} on ${esc(hol)}` : `${esc(hol)}: nothing planned`;
+      list.push({s, html:`<span class="tag hol">Holiday</span> ${txt}`, quiet: !live.length});
+    }
+  }
+  const ul = $("cominglist"); const sec = $("coming");
+  sec.hidden = !Object.keys(state.commitments).length;
+  ul.innerHTML = list.length ? list.map(x => `<li class="${x.quiet?'ok':''}"><span class="when">${ukShort(x.s)}</span><span class="what">${x.html}</span><button class="ghost" data-open="${x.s}">Open day</button></li>`).join("")
+    : `<li class="ok">No clashes and no bank holidays in the next 8 weeks.</li>`;
+}
+
+// ---------- side sheet ----------
+function openSheet(title, html){ $("sheettitle").textContent = title; $("sheetbody").innerHTML = html; $("sheet").classList.add("open"); $("scrim").classList.add("open"); $("sheet").setAttribute("aria-hidden","false"); }
+function closeSheet(){ $("sheet").classList.remove("open"); $("scrim").classList.remove("open"); $("sheet").setAttribute("aria-hidden","true"); }
+
+function showDay(s){
+  const d = parse(s), occ = occurrences(d), hol = holiday(s);
+  let h = hol ? `<div class="note"><span class="tag hol">Bank holiday</span> ${esc(hol)}. Check which of these still happen.</div>` : "";
+  if (!occ.length) h += `<p class="help">Nothing planned.</p>`;
+  for (const o of occ){
+    const ex = o.skipped;
+    h += `<div class="item" style="--c:${o.c.hue}">
+      <div class="nm">${esc(o.c.name)} ${o.clash?'<span class="tag clash">clash</span>':''}${o.mix?`<span class="tag mix">travel: ${esc(o.mix.join("; "))}</span>`:''} ${ex?'<span class="tag moved">skipped</span>':''} ${o.movedFrom?'<span class="tag moved">moved here</span>':''}</div>
+      <div class="meta">${esc(timeLabel(o))}${o.cycle?` · week ${o.cycle.week} of ${o.cycle.of}`:""}${o.clash?` · clashes with ${esc(o.clash.join(", "))}`:""}${o.movedFrom?` · was ${ukShort(o.movedFrom)}`:""}${ex&&ex.note?` · ${esc(ex.note)}`:""}</div>
+      <div class="acts">
+        ${o.c.kind==="leave" ? `<button data-edit="${o.id}">Edit leave</button>` : ex ? `<button data-unskip="${ex.id}">Put it back</button>` :
+          o.movedFrom ? `<button data-unmove="${o.moveId}">Undo the move</button>` :
+          `<button data-skip="${o.id}" data-date="${s}">Skip this one</button><button data-move="${o.id}" data-date="${s}">Move it</button>`}
+        <button class="ghost" data-edit="${o.id}">Edit ${esc(o.c.name)}</button>
+      </div></div>`;
+  }
+  h += `<hr><div class="inline"><button data-addonce="${s}">+ One-off on this day</button><button data-pause="${s}">Pause something over a date range</button></div>`;
+  openSheet(ukShort(s) + " " + d.getFullYear(), h);
+}
+
+function form(c, id){
+  c = c || { name:"", hue:HUES[Object.keys(state.commitments).length % HUES.length], kind:"cycle", day:0, start:"", end:"", date:ymd(mondayOf(new Date())), on:3, off:3, from:"", until:"", notes:"" };
+  const sel = (v, opts) => opts.map(([k,l]) => `<option value="${k}" ${String(v)===String(k)?"selected":""}>${l}</option>`).join("");
+  return `<form id="cform" data-id="${id||""}">
+    <div class="field"><label for="f_name">Name</label><input id="f_name" name="name" required value="${esc(c.name)}" placeholder="e.g. RP client: Sam"></div>
+    <div class="row">
+      <div class="field"><label for="f_kind">Pattern</label><select id="f_kind" name="kind">${sel(c.kind,[["cycle","Weeks on / weeks off"],["weekly","Every week"],["monthly","Monthly (e.g. first Tuesday)"],["dates","Agreed dates (a list)"],["once","One-off"]])}</select></div>
+      <div class="field" data-for="monthly"><label for="f_nth">Which one</label><select id="f_nth" name="nth">${sel(c.nth||1,[[1,"1st"],[2,"2nd"],[3,"3rd"],[4,"4th"],[-1,"Last"]])}</select></div>
+      <div class="field" data-for="cycle weekly monthly"><label for="f_day">Day</label><select id="f_day" name="day">${sel(c.day,DOW.map((d,i)=>[i,d]))}</select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="f_start">Start</label><input id="f_start" name="start" type="time" value="${esc(c.start)}"></div>
+      <div class="field"><label for="f_end">End</label><input id="f_end" name="end" type="time" value="${esc(c.end)}"></div>
+    </div>
+    <p class="help">Leave times blank for an all-day item. Only timed items are checked for clashes.</p>
+    <div class="row" data-for="cycle">
+      <div class="field"><label for="f_on">Weeks on</label><input id="f_on" name="on" type="number" min="1" max="26" value="${c.on}"></div>
+      <div class="field"><label for="f_off">Weeks off</label><input id="f_off" name="off" type="number" min="0" max="26" value="${c.off}"></div>
+    </div>
+    <div class="field" data-for="cycle"><label for="f_date">A date in the first week ON (any day that week)</label><input id="f_date" name="date" type="date" value="${esc(c.date)}"></div>
+    <div class="field" data-for="once"><label for="f_date1">Date</label><input id="f_date1" name="date1" type="date" value="${esc(c.date)}"></div>
+    <div class="field" data-for="dates"><label for="f_dates">Dates, one per line or separated by commas (e.g. 12/01/2027)</label><textarea id="f_dates" name="dates" rows="5" placeholder="12/01/2027
+19/01/2027
+26/01/2027">${esc((c.dates||[]).map(uk).join("\n"))}</textarea><p class="help">The same start and end time applies to every date. Dates already in the past are kept.</p></div>
+    <div class="row" data-for="cycle weekly monthly">
+      <div class="field"><label for="f_from">Starts (optional)</label><input id="f_from" name="from" type="date" value="${esc(c.from)}"></div>
+      <div class="field"><label for="f_until">Ends (optional)</label><input id="f_until" name="until" type="date" value="${esc(c.until)}"></div>
+    </div>
+    <div class="field"><label>Colour</label><div class="swatches">${HUES.map(h => `<button type="button" data-hue="${h}" style="--c:${h}" aria-pressed="${h===c.hue}" aria-label="colour"></button>`).join("")}</div></div>
+    <div class="field"><label for="f_loc">Location (optional)</label><input id="f_loc" name="loc" list="loclist2" value="${esc(c.loc||"")}" placeholder="e.g. Falmer campus"><datalist id="loclist2">${[...new Set([...Object.values(state.needs), ...Object.values(state.commitments)].map(x => x.loc).filter(Boolean))].map(l => `<option value="${esc(l)}">`).join("")}</datalist></div>
+    <div class="field"><label for="f_notes">Notes</label><textarea id="f_notes" name="notes" rows="2">${esc(c.notes)}</textarea></div>
+    <div class="inline"><button class="primary" type="submit">${id?"Save":"Add"}</button>${id?`<button type="button" class="danger" data-del="${id}">Delete</button>`:""}</div>
+    ${id ? `<hr><div class="note" id="exlist"></div>` : ""}
+  </form>`;
+}
+function wireForm(){
+  const f = $("cform"); if (!f) return;
+  const sync = () => { const k = f.kind.value; f.querySelectorAll("[data-for]").forEach(el => { el.hidden = !el.dataset.for.split(" ").includes(k); }); };
+  f.kind.addEventListener("change", sync); sync();
+  f.querySelectorAll("[data-hue]").forEach(b => b.addEventListener("click", () => { f.querySelectorAll("[data-hue]").forEach(x => x.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); }));
+  const id = f.dataset.id;
+  if (id){
+    const exs = Object.entries(state.exceptions).filter(([k,x]) => x.cid===id).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    $("exlist").innerHTML = exs.length ? `<b>Exceptions</b><br>` + exs.map(([k,x]) => `${x.kind==="range"?`Paused ${uk(x.date)} to ${uk(x.to)}`:x.kind==="move"?`${uk(x.date)} moved to ${uk(x.newDate)} ${x.newStart||""}`:`Skipped ${uk(x.date)}`}${x.note?" · "+esc(x.note):""} <button class="ghost" data-unskip="${k}">remove</button>`).join("<br>") : "No exceptions yet. Skip or move single dates from the day view.";
+  }
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const kind = f.kind.value;
+    const hue = (f.querySelector("[data-hue][aria-pressed='true']")||{}).dataset.hue || HUES[0];
+    const data = { name:f.name.value.trim(), hue, kind, day:Number(f.day.value), start:f.start.value, end:f.end.value,
+      date: kind==="once" ? f.date1.value : f.date.value, nth:Number(f.nth.value)||1, on:Number(f.on.value)||1, off:Number(f.off.value)||0, from:f.from.value, until:f.until.value, loc:f.loc.value.trim(), notes:f.notes.value.trim() };
+    if (!data.name) return;
+    if (kind === "dates"){
+      const raw = f.dates.value.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean), good = [], bad = [];
+      for (const r of raw){ let m = r.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/), iso = null;
+        if (m){ const y = m[3].length===2 ? "20"+m[3] : m[3]; iso = `${y}-${pad(m[2])}-${pad(m[1])}`; }
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(r)) iso = r;
+        if (iso && !isNaN(parse(iso))) good.push(iso); else bad.push(r); }
+      if (bad.length){ banner("These don't look like dates: " + bad.join(", ") + ". Use dd/mm/yyyy."); return; }
+      if (!good.length){ banner("Add at least one date."); return; }
+      data.dates = [...new Set(good)].sort(); data.date = data.dates[0]; data.day = dow(parse(data.date));
+    }
+    if ((kind==="cycle"||kind==="once") && !data.date){ banner("Give it a date first."); return; }
+    if (data.start && data.end && mins(data.end) <= mins(data.start)){ banner("End time must be after the start time."); return; }
+    banner("");
+    const newId = id || uid("c");
+    closeSheet();
+    await save("commitments", newId, data);
+  });
+}
+function editCommitment(id){ if (id && state.commitments[id] && state.commitments[id].kind==="leave"){ leaveForm(id); return; } openSheet(id ? "Edit commitment" : "Add a commitment", form(state.commitments[id], id)); wireForm(); }
+function addOnce(s){ openSheet("One-off on " + ukShort(s), form({ name:"", hue:HUES[2], kind:"once", day:dow(parse(s)), start:"", end:"", date:s, on:1, off:0, from:"", until:"", notes:"" }, "")); wireForm(); }
+function leaveForm(id){
+  const c = (id && state.commitments[id]) || { name:"Annual leave", from: todayStr, until: todayStr };
+  const leaves = Object.entries(state.commitments).filter(([k,x]) => x.kind==="leave").sort((a,b) => a[1].from.localeCompare(b[1].from));
+  openSheet(id ? "Edit leave" : "Annual leave", `<form id="lform" style="display:grid;gap:10px">
+    <div class="row"><div class="field"><label for="l_from">First day off</label><input id="l_from" type="date" value="${esc(c.from)}" required></div><div class="field"><label for="l_to">Last day off</label><input id="l_to" type="date" value="${esc(c.until)}" required></div></div>
+    <div class="field"><label for="l_name">Label</label><input id="l_name" value="${esc(c.name)}" placeholder="Annual leave"></div>
+    <p class="help">Those days are blocked out. Anything already on them is flagged, and suggestions avoid them.</p>
+    <div class="inline"><button class="primary" type="submit">${id?"Save":"Add leave"}</button>${id?`<button type="button" class="danger" id="l_del">Remove</button>`:""}<button type="button" id="l_back">Close</button></div></form>
+    ${!id && leaves.length ? `<hr><b>Leave booked</b><div class="commit-list">${leaves.map(([k,x]) => `<div class="item" style="--c:var(--muted)" data-editleave="${k}" tabindex="0" role="button"><div class="nm">${esc(x.name)}</div><div class="meta">${uk(x.from)} to ${uk(x.until)}</div></div>`).join("")}</div>` : ""}`);
+  $("l_back").onclick = closeSheet;
+  if (id) $("l_del").onclick = async () => { closeSheet(); await remove("commitments", id); };
+  $("sheetbody").querySelectorAll("[data-editleave]").forEach(b => b.onclick = () => leaveForm(b.dataset.editleave));
+  $("lform").onsubmit = async e => { e.preventDefault(); const a = $("l_from").value, b = $("l_to").value; if (!a || !b) return; if (b < a){ banner("Last day off must be on or after the first."); return; } banner("");
+    closeSheet(); await save("commitments", id || uid("c"), { name: $("l_name").value.trim() || "Annual leave", hue:"var(--muted)", kind:"leave", day:0, start:"", end:"", date:a, from:a, until:b, on:1, off:0, notes:"" }); };
+}
+function manage(){
+  const items = Object.entries(state.commitments).sort((x,y) => x[1].name.localeCompare(y[1].name));
+  const desc = c => c.kind==="cycle" ? `${DOW[c.day]} ${timeLabel({start:c.start,end:c.end})} · ${c.on} weeks on, ${c.off} off (first on-week ${uk(c.date)})` : c.kind==="weekly" ? `Every ${DOW[c.day]} ${timeLabel({start:c.start,end:c.end})}` : c.kind==="monthly" ? `${nthLabel(c.nth, c.day)}, ${timeLabel({start:c.start,end:c.end})}` : c.kind==="dates" ? `${(c.dates||[]).length} agreed dates, ${uk(c.dates[0])} to ${uk(c.dates[c.dates.length-1])}, ${timeLabel({start:c.start,end:c.end})}` : c.kind==="leave" ? `Leave, ${uk(c.from)} to ${uk(c.until)}` : `${uk(c.date)} ${timeLabel({start:c.start,end:c.end})}`;
+  const h = `<div class="commit-list">${items.map(([id,c]) => `<div class="item" style="--c:${c.hue}" data-edit="${id}" tabindex="0" role="button"><div class="nm">${esc(c.name)}</div><div class="meta">${desc(c)}${c.from?` · from ${uk(c.from)}`:""}${c.until?` · until ${uk(c.until)}`:""}</div></div>`).join("") || '<p class="help">Nothing yet.</p>'}</div>
+    <div class="inline"><button class="primary" id="m_add">+ Add a commitment</button><button id="m_import">Import a calendar (.ics)</button><input type="file" id="m_file" accept=".ics,text/calendar" hidden>${items.some(([id,c]) => c.src==="ics") ? `<button id="m_clearics">Clear imported items</button>` : ""}</div>
+    <p class="help">Export or download the uni timetable as an .ics file, then import it here. Repeating sessions become weekly items; the rest become one-offs.</p>
+    <div class="inline"><button id="m_backup">Copy a backup</button></div>
+    <details><summary class="help">Restore from a backup</summary><textarea id="m_restore" rows="3" placeholder="Paste the backup here"></textarea><button id="m_restorebtn" style="margin-top:6px">Restore</button></details>
+    <p class="help">Bank holidays shown are England and Wales, from gov.uk, to the end of 2028.</p>`;
+  openSheet("Commitments", h);
+  $("m_add").onclick = () => editCommitment(null);
+  $("m_import").onclick = () => $("m_file").click();
+  $("m_file").onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const txt = await f.text(); importPreview(parseIcs(txt), f.name); } catch(err){ banner("That file could not be read as a calendar."); } };
+  const ci = $("m_clearics"); if (ci) ci.onclick = async () => {
+    const ids = Object.entries(state.commitments).filter(([id,c]) => c.src==="ics").map(([id]) => id);
+    closeSheet();
+    for (const [k,x] of Object.entries(state.exceptions)) if (ids.includes(x.cid)) await remove("exceptions", k);
+    for (const id of ids) await remove("commitments", id);
+  };
+  $("m_backup").onclick = async () => { const txt = JSON.stringify({commitments:state.commitments, exceptions:state.exceptions}); try { await navigator.clipboard.writeText(txt); $("m_backup").textContent = "Copied"; } catch(e){ const ta = document.createElement("textarea"); ta.value = txt; $("sheetbody").appendChild(ta); ta.select(); } };
+  $("m_restorebtn").onclick = async () => { try { const j = JSON.parse($("m_restore").value); for (const [id,c] of Object.entries(j.commitments||{})) await save("commitments", id, c); for (const [id,x] of Object.entries(j.exceptions||{})) await save("exceptions", id, x); closeSheet(); } catch(e){ banner("That backup could not be read."); } };
+}
+function skipForm(cid, s){
+  const c = state.commitments[cid];
+  openSheet("Skip " + c.name, `<p class="help">${esc(c.name)} on ${ukShort(s)} will be shown crossed out and ignored for clashes.</p>
+    <form id="xform"><div class="field"><label for="x_note">Why (optional)</label><input id="x_note" placeholder="e.g. client away"></div>
+    <div class="inline" style="margin-top:10px"><button class="primary" type="submit">Skip it</button><button type="button" id="x_cancel">Cancel</button></div></form>`);
+  $("x_cancel").onclick = () => showDay(s);
+  $("xform").onsubmit = async e => { e.preventDefault(); const id = uid("x"); closeSheet(); await save("exceptions", id, {cid, kind:"skip", date:s, note:$("x_note").value.trim()}); showDay(s); };
+}
+function moveForm(cid, s){
+  const c = state.commitments[cid];
+  openSheet("Move " + c.name, `<form id="xform">
+    <div class="field"><label for="x_date">New date</label><input id="x_date" type="date" value="${s}" required></div>
+    <div class="row"><div class="field"><label for="x_start">Start</label><input id="x_start" type="time" value="${esc(c.start||"")}"></div><div class="field"><label for="x_end">End</label><input id="x_end" type="time" value="${esc(c.end||"")}"></div></div>
+    <div class="field"><label for="x_note">Why (optional)</label><input id="x_note" placeholder="e.g. bank holiday"></div>
+    <div class="inline" style="margin-top:10px"><button class="primary" type="submit">Move it</button><button type="button" id="x_cancel">Cancel</button></div></form>`);
+  $("x_cancel").onclick = () => showDay(s);
+  $("xform").onsubmit = async e => { e.preventDefault(); const nd = $("x_date").value; if (!nd) return; const id = uid("x"); closeSheet();
+    await save("exceptions", id, {cid, kind:"move", date:s, newDate:nd, newStart:$("x_start").value, newEnd:$("x_end").value, note:$("x_note").value.trim()}); showDay(nd); };
+}
+function pauseForm(s){
+  const items = Object.entries(state.commitments).sort((x,y) => x[1].name.localeCompare(y[1].name));
+  openSheet("Pause over a date range", `<form id="xform">
+    <div class="field"><label for="x_cid">Which commitment</label><select id="x_cid">${items.map(([id,c]) => `<option value="${id}">${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="row"><div class="field"><label for="x_from">From</label><input id="x_from" type="date" value="${s}" required></div><div class="field"><label for="x_to">To</label><input id="x_to" type="date" value="${s}" required></div></div>
+    <div class="field"><label for="x_note">Why (optional)</label><input id="x_note" placeholder="e.g. reading week, Christmas closure"></div>
+    <p class="help">Every occurrence in the range is skipped. Weeks-on / weeks-off counting carries on underneath, so the cycle does not shift.</p>
+    <div class="inline" style="margin-top:10px"><button class="primary" type="submit">Pause it</button><button type="button" id="x_cancel">Cancel</button></div></form>`);
+  $("x_cancel").onclick = () => showDay(s);
+  $("xform").onsubmit = async e => { e.preventDefault(); const a=$("x_from").value, b=$("x_to").value; if (!a||!b||b<a){ banner("The To date must be on or after the From date."); return; } const id = uid("x"); closeSheet();
+    await save("exceptions", id, {cid:$("x_cid").value, kind:"range", date:a, to:b, note:$("x_note").value.trim()}); };
+}
+// ---------- planning: needs in, suggested slots out ----------
+// need: {name, hue, mins, on, off, days [Mon=0..], earliest, latest, placed (commitment id or "")}
+// settings/main: {days, start, end, step}
+const DEFAULTS = { days:[0,1,2,3,4], start:"09:00", end:"20:00", step:15, mixFlag:true };
+const cfg = () => Object.assign({}, DEFAULTS, state.settings.main || {});
+const pairKey = (a,b) => [a,b].sort().join("|");
+const travelMins = (a,b) => { const t = (cfg().travel||{})[pairKey(a,b)]; return (t === "" || t == null) ? null : Number(t); };
+function locGapOk(a0, a1, locA, b0, b1, locB){
+  // two timed sessions on one day: fine if same place or no location given; otherwise the gap must cover the journey
+  if (!locA || !locB || locA === locB) return { ok:true };
+  const tr = travelMins(locA, locB);
+  const gap = a0 >= b1 ? a0 - b1 : (b0 >= a1 ? b0 - a1 : -1);
+  if (tr == null) return { ok:false, hard:true, reason:`${locB}: no travel time set, so never on the same day` };
+  if (gap < 0) return { ok:false, reason:`${locB}: overlaps` };
+  return gap >= tr ? { ok:true } : { ok:false, reason:`${locB}: ${gap} min gap, needs ${tr}` };
+}
+const allLocations = () => [...new Set([...Object.values(state.needs), ...Object.values(state.commitments)].map(x => x.loc).filter(Boolean))].sort();
+const HORIZON = 18;                                     // weeks the planner looks ahead when a need has no dates of its own
+const fromMins = m => pad(Math.floor(m/60))+":"+pad(m%60);
+function windowFor(need){
+  // the weeks this need is planned over: its own plan-from / plan-until dates, else 18 weeks from this Monday
+  const today = mondayOf(new Date());
+  let mon = need.pfrom ? mondayOf(parse(need.pfrom)) : today;
+  if (mon < today) mon = today;
+  let H = HORIZON;
+  if (need.puntil){ H = Math.max(1, Math.min(52, weeksBetween(mon, parse(need.puntil)) + 1)); }
+  return { mon, H };
+}
+function fixedMap(extra, mon, H){
+  // every day in the window -> live timed occurrences (fixed items plus any tentative extras)
+  const map = {}, extras = extra || [];
+  for (let i=0;i<H*7;i++){
+    const d = addDays(mon,i), s = ymd(d);
+    const occ = occurrences(d).filter(o => !o.skipped && (o.c.kind==="leave" || (o.start && o.end))).map(o => o.c.kind==="leave" ? ({name:o.c.name, a:0, b:1440}) : ({name:o.c.name, a:mins(o.start), b:mins(o.end), loc:o.c.loc||""}));
+    for (const x of extras){ if (x.from && s < x.from) continue; if (x.until && s > x.until) continue; if (x.nth != null){ if (dow(d)===x.day && nthMatch(d, x.nth)) occ.push({name:x.name, a:mins(x.start), b:mins(x.end), loc:x.loc||""}); continue; } const w = weeksBetween(parse(x.date), d); const pos = ((w % (x.on+x.off)) + (x.on+x.off)) % (x.on+x.off); if (dow(d)===x.day && pos < x.on) occ.push({name:x.name, a:mins(x.start), b:mins(x.end), loc:x.loc||""}); }
+    map[s] = occ;
+  }
+  return { mon, H, map };
+}
+function candidates(need, fm, phases){
+  // a flexible gap ("every 4 to 6 weeks") tries each length and pools the options, best first
+  const lo = Number(need.pmin)||0, hi = Number(need.pmax)||0;
+  if (need.rep !== "monthly" && lo && hi && hi >= lo && hi > need.on){
+    let pool = [];
+    for (let Pn = Math.max(lo, need.on+1); Pn <= hi; Pn++){ const nn = { ...need, off: Pn - need.on, pmin:"", pmax:"" };
+      // compare lengths fairly: clashes, holidays and location misses count in full; busyness per session; the shorter gap wins a tie
+      pool = pool.concat(candidates(nn, fm, phases).map(o => ({ ...o, off: Pn - need.on, period: Pn, score: o.clashes*100 + (o.mix||0)*40 + o.hol.length*15 + ((o.load*2 - (o.together||0)*3) / Math.max(1,o.count)) * 3 + (Pn - lo) * 1 + (o.p||0)*0.5 }))); }
+    pool.sort((a,b) => a.score - b.score);
+    return pool;
+  }
+  const c = cfg(), P = need.on + need.off, out = [];
+  const days = (need.days && need.days.length ? need.days : c.days);
+  const e0 = mins(need.earliest || c.start), e1 = mins(need.latest || c.end), step = 15, len = (Number(need.travel)||0) + (Number(need.mins)||120) + (Number(need.gap)||0), tr = Number(need.travel)||0;
+  if (need.rep === "monthly"){
+    const nths = (need.nth && need.nth !== "any") ? [Number(need.nth)] : [1,2,3,4,-1];
+    for (const nth of nths) for (const day of days){
+      let best = null;
+      for (let t=e0; t+len<=e1; t+=step){
+        const m = scoreSlot(need, fm, ymd(fm.mon), day, t, len, "", nth); if (!m) continue;
+        m.score += (t-e0)/600 + (t%30 ? 0.3 : 0);
+        if (!best || m.score < best.score) best = { ...m, p:0, nth, anchor:ymd(fm.mon), day, start:fromMins(t), end:fromMins(t+len), sess:fromMins(t+tr)+"–"+fromMins(t+tr+(Number(need.mins)||120)) };
+      }
+      if (best) out.push(best);
+    }
+    out.sort((a,b) => a.score-b.score);
+    return out;
+  }
+  for (let p=0; p<P; p++){
+    if (phases && !phases.has(p)) continue;
+    const anchor = ymd(addDays(fm.mon, p*7));
+    for (const day of days){
+      let best = null;
+      for (let t=e0; t+len<=e1; t+=step){
+        const m = scoreSlot(need, fm, anchor, day, t, len, "");
+        if (!m) continue;
+        m.score += p*0.5 + (t-e0)/600 + (t%30 ? 0.3 : 0);
+        if (!best || m.score < best.score) best = { ...m, p, anchor, day, start:fromMins(t), end:fromMins(t+len), sess:fromMins(t+tr)+"–"+fromMins(t+tr+(Number(need.mins)||120)) };
+      }
+      if (best) out.push(best);
+    }
+  }
+  out.sort((a,b) => a.score-b.score);
+  return out;
+}
+function scoreSlot(need, fm, anchor, day, t, len, from, nth){
+  // metrics for one candidate: day of week, start minute, cycle anchored on `anchor` (or the nth weekday each month), only sessions on or after `from`
+  const P = need.on + need.off, A = parse(anchor);
+  let clashes=0, hol=[], load=0, who=new Set(), count=0, mix=0, mixWith=new Set(), together=0;
+  const flag = cfg().mixFlag !== false, loc = need.loc || "";
+  for (let w=0; w<fm.H; w++){
+    const d = addDays(fm.mon, w*7+day), s = ymd(d);
+    if (nth != null){ if (!nthMatch(d, nth)) continue; } else if (((weeksBetween(A, d) % P) + P) % P >= need.on) continue;
+    if (from && s < from) continue;
+    if (need.puntil && s > need.puntil) continue;
+    count++;
+    if (HOLIDAYS[s]) hol.push(HOLIDAYS[s]+" "+uk(s).slice(0,5));
+    let dayMix = false, daySame = false;
+    for (const o of fm.map[s]||[]){ if (t < o.b && o.a < t+len){ clashes++; who.add(o.name); } else if (loc && o.loc && o.loc === loc){ daySame = true; } else load++;
+      if (flag && loc && o.loc && o.loc !== loc){ const r = locGapOk(t, t+len, loc, o.a, o.b, o.loc); if (!r.ok){ if (r.hard){ clashes++; who.add(o.name + " (" + o.loc + ", no travel time set)"); } else { dayMix = true; mixWith.add(o.loc); } } } }
+    if (dayMix) mix++; if (daySame) together++;
+  }
+  if (!count) return null;
+  return { score: clashes*100 + mix*40 + hol.length*15 + load*2 - together*3, clashes, hol, load, who:[...who], count, mix, mixWith:[...mixWith], together };
+}
+function continuation(need, fm){
+  // the group already has sessions on the calendar: carry its pattern on from the last one
+  if (need.rep === "monthly") return null;
+  const ex = existingFor(need); if (!ex.length) return null;
+  const dates = [...new Set(ex.map(x => x.date))].sort(), last = dates[dates.length-1];
+  const lastOcc = ex.filter(x => x.date===last)[0];
+  const lastD = parse(last), day = dow(lastD);
+  // how many consecutive weeks (same weekday) the final block has run
+  let k = 1; while (k < need.on && dates.includes(ymd(addDays(lastD, -7*k)))) k++;
+  const anchor = ymd(addDays(mondayOf(lastD), -7*(k-1)));
+  const tm = lastOcc.time.match(/^(\d\d:\d\d)(?:–(\d\d:\d\d))?/); if (!tm) return null;
+  const t = mins(tm[1]), tr = Number(need.travel)||0, len = (Number(need.travel)||0) + (Number(need.mins)||120) + (Number(need.gap)||0);
+  const from = ymd(addDays(lastD, 1));
+  const m = scoreSlot(need, fm, anchor, day, t - tr, len, from); if (!m) return null;
+  const nextOn = (() => { const P = need.on+need.off; for (let w=0; w<fm.H+P; w++){ const d = addDays(lastD, 7*(w+1)); if (((weeksBetween(parse(anchor), d) % P) + P) % P < need.on) return ymd(d); } return ""; })();
+  return { ...m, on_total: need.on, p:0, anchor, day, start:fromMins(t-tr), end:fromMins(t-tr+len), sess:tm[1]+"–"+fromMins(t+(Number(need.mins)||120)), from, cont:true, last, nextOn, k };
+}
+function existingFor(need){
+  // calendar entries that look like this group or organisation, inside the need's dates (not the slot this need placed itself)
+  const names = [need.org, (need.name||"").replace(/:\s*Group \d+$/i,"")].filter(Boolean).map(x => x.toLowerCase());
+  if (!names.length) return [];
+  const win = windowFor(need), out = [];
+  for (let i=0;i<win.H*7;i++){
+    const d = addDays(win.mon,i), s = ymd(d);
+    if (need.puntil && s > need.puntil) break;
+    for (const o of occurrences(d)){
+      if (o.id === need.placed || o.skipped) continue;
+      const nm = o.c.name.toLowerCase();
+      if (names.some(x => nm.includes(x) || x.includes(nm))) out.push({ date:s, name:o.c.name, time:timeLabel(o) });
+    }
+  }
+  return out;
+}
+function existingHtml(need){
+  const ex = existingFor(need); if (!ex.length) return "";
+  const byName = {}; ex.forEach(x => (byName[x.name] = byName[x.name]||[]).push(x));
+  return `<div class="note" style="margin:4px 0"><span class="tag hol">Already on the calendar</span> ${Object.entries(byName).map(([nm,xs]) => `<b>${esc(nm)}</b>: ${xs.length} session${xs.length===1?"":"s"} between these dates (${xs.slice(0,4).map(x => `<button class="ghost" style="padding:0 4px" data-open="${x.date}">${uk(x.date).slice(0,5)}</button>`).join(" ")}${xs.length>4?" …":""})`).join("; ")}. The first suggestion carries that pattern on from the last of them.</div>`;
+}
+function planAll(){
+  const needs = Object.entries(state.needs).filter(([id,n]) => !n.placed || !state.commitments[n.placed]).sort((a,b)=> (Number(a[1].rank)||999) - (Number(b[1].rank)||999) || a[1].name.localeCompare(b[1].name, undefined, {numeric:true}));
+  const extra = [], result = [];
+  // an organisation's groups spread over the first `span` weeks of the round, no more than its share per week
+  const orgCount = {}, orgSpan = {}, used = {}, orgStart = {};
+  Object.values(state.needs).forEach(m => { if (m.org){ orgCount[m.org] = (orgCount[m.org]||0)+1; if (Number(m.span)) orgSpan[m.org] = Number(m.span); } });
+  Object.entries(state.needs).forEach(([k,m]) => { if (m.org && m.placed && state.commitments[m.placed]){ const cm = state.commitments[m.placed]; const P = (Number(m.on)||1) + (Number(m.off)||0), p = ((weeksBetween(windowFor(m).mon, parse(cm.date)) % P) + P) % P; used[m.org] = used[m.org]||{}; used[m.org][p] = (used[m.org][p]||0)+1; if (orgStart[m.org] == null || p < orgStart[m.org]) orgStart[m.org] = p; } });
+  for (const [id,n] of needs){
+    const win = windowFor(n), fm = fixedMap(extra, win.mon, win.H);
+    let phases = null;
+    if (n.org && orgSpan[n.org] && n.rep !== "monthly"){
+      const S = orgSpan[n.org], P = n.on + n.off, cap = Math.ceil(orgCount[n.org]/S), u = used[n.org]||{}, s0 = orgStart[n.org];
+      const round = s0 == null ? [...Array(P).keys()] : [...Array(S).keys()].map(k => (s0 + k) % P);   // first group picks the week the round starts; the rest stay inside it
+      phases = new Set(round.filter(p => (u[p]||0) < cap));
+      if (!phases.size) phases = new Set(round);
+    }
+    const all = candidates(n, fm, phases), seen = new Set(), opts = [];
+    const cont = continuation(n, fm); if (cont){ opts.push(cont); seen.add(cont.day); }                        // carry an existing pattern on first
+    for (const o of all){ if (!seen.has(o.day)){ seen.add(o.day); opts.push(o); } if (opts.length===3) break; }   // then the best slot on other days
+    for (const o of all){ if (opts.length===3) break; if (!opts.includes(o)) opts.push(o); }
+    result.push({ id, n, opts, win });
+    if (opts[0] && phases){ used[n.org] = used[n.org]||{}; used[n.org][opts[0].p] = (used[n.org][opts[0].p]||0)+1; if (orgStart[n.org] == null) orgStart[n.org] = opts[0].p; }
+    if (opts[0]) extra.push({ name:n.name, loc:n.loc||"", nth:opts[0].nth != null ? opts[0].nth : null, date:opts[0].anchor, day:opts[0].day, start:opts[0].start, end:opts[0].end, on:n.on, off:(opts[0].off != null ? opts[0].off : n.off), from:opts[0].from||n.pfrom||"", until:n.puntil||"" });
+  }
+  return result;
+}
+function unitList(){
+  // priority order: an organisation counts as one unit, a single group or client as one
+  const units = {}, order = [];
+  Object.entries(state.needs).forEach(([id,n]) => { const key = n.org ? "org:"+n.org : "need:"+id; if (!units[key]){ units[key] = { key, org:n.org||"", label:n.org||n.name, needs:[], rank:Number(n.rank)||999 }; order.push(units[key]); } units[key].needs.push([id,n]); units[key].rank = Math.min(units[key].rank, Number(n.rank)||999); });
+  order.sort((a,b) => a.rank - b.rank || a.label.localeCompare(b.label));
+  order.forEach(u => u.needs.sort((a,b) => a[1].name.localeCompare(b[1].name, undefined, {numeric:true})));
+  return order;
+}
+async function moveUnit(key, dir){
+  const units = unitList(), i = units.findIndex(u => u.key===key), j = i + dir;
+  if (i < 0 || j < 0 || j >= units.length) return;
+  [units[i], units[j]] = [units[j], units[i]];
+  for (let k=0;k<units.length;k++) for (const [id,n] of units[k].needs) if ((Number(n.rank)||999) !== k+1) await save("needs", id, { ...n, rank:k+1 });
+  planSheet();
+}
+function orgDelete(org){
+  const xs = Object.entries(state.needs).filter(([id,n]) => n.org === org);
+  openSheet("Delete " + org, `<p>Remove all <b>${xs.length}</b> groups of <b>${esc(org)}</b> from the plan, including any already on the calendar? Fixed entries you typed in yourself are not touched.</p><div class="inline"><button class="danger" id="od_yes">Delete all ${xs.length}</button><button id="od_no">Keep them</button></div>`);
+  $("od_no").onclick = () => planSheet();
+  $("od_yes").onclick = async () => { closeSheet(); for (const [id,n] of xs){ await unplace(id); await remove("needs", id); } planSheet(); };
+}
+function planSheet(o){
+  o = o || {};
+  const c = cfg();
+  const needs = Object.entries(state.needs).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  const placed = needs.filter(([id,n]) => n.placed && state.commitments[n.placed]);
+  const waiting = needs.filter(([id,n]) => !n.placed || !state.commitments[n.placed]);
+  const needMeta = n => `${n.loc?`${esc(n.loc)} · `:""}${n.travel?`${n.travel} min travel + `:""}${n.mins} min${n.gap?` + ${n.gap} min gap`:""} · ${n.rep==="monthly" ? (n.nth && n.nth!=="any" ? NTH[String(n.nth)]+" weekday each month" : "once a month") : (n.pmin && n.pmax) ? `every ${n.pmin} to ${n.pmax} weeks` : `${n.on} on / ${n.off} off`} · ${(n.days&&n.days.length?n.days:c.days).map(d=>DOW[d]).join(" ")} ${n.earliest||c.start}–${n.latest||c.end}${(n.pfrom||n.puntil)?` · ${n.pfrom?uk(n.pfrom):"now"} to ${n.puntil?uk(n.puntil):"open"}`:""}`;
+  const h = `
+    ${o.note ? `<div class="note"><span class="tag moved">Changed</span> ${esc(o.note)}</div>` : ""}
+    <details ${needs.length?"":"open"}><summary><b>Will's hours</b> <span class="help">${c.days.map(d=>DOW[d]).join(", ")} ${c.start}–${c.end}</span></summary>
+      <form id="hform" style="display:grid;gap:8px;margin-top:8px">
+        <div class="checks">${DOW.map((d,i)=>`<label><input type="checkbox" name="d" value="${i}" ${c.days.includes(i)?"checked":""}>${d}</label>`).join("")}</div>
+        <div class="row"><div class="field"><label for="h_start">Earliest start</label><input id="h_start" type="time" value="${c.start}"></div><div class="field"><label for="h_end">Latest finish</label><input id="h_end" type="time" value="${c.end}"></div></div>
+        <label class="inline" style="color:var(--fg)"><input type="checkbox" id="h_mix" style="width:auto" ${c.mixFlag!==false?"checked":""}> Check travel time between locations on the same day</label>
+        ${(() => { const L = allLocations(); if (L.length < 2) return `<p class="help">Give two or more entries a location and the travel times between them appear here.</p>`; const rows = []; for (let i=0;i<L.length;i++) for (let j=i+1;j<L.length;j++){ const k = pairKey(L[i],L[j]); const v = (c.travel||{})[k]; rows.push(`<div class="inline" style="justify-content:space-between"><span>${esc(L[i])} ↔ ${esc(L[j])}</span><span class="inline" style="gap:4px"><input type="number" min="0" step="5" data-travel="${esc(k)}" value="${v==null?"":esc(v)}" style="width:5.5em" placeholder="min"> <span class="help">min</span></span></div>`); } return `<div style="display:grid;gap:6px"><b>Travel between locations</b><p class="help" style="margin:0">Minutes door to door. Two locations on one day are fine when the gap between sessions covers the journey; blank means never put them on the same day.</p>${rows.join("")}</div>`; })()}
+        <div><button class="primary" type="submit">Save hours</button></div></form></details>
+    <hr>
+    <div class="inline" style="justify-content:space-between"><b>Groups and clients to place</b><button id="n_add">+ Add</button></div>
+    ${!needs.length ? `<p class="help">Each RP group or in-person client goes in here: how long, any travel or gap, weeks on and off, the days and times they can do, and the dates to plan between. Add them all, then one button puts suggestions on the calendar.</p>` : ""}
+    ${needs.length > 1 ? `<p class="help">Priority order: the top one gets first choice of slots, each one below fits around those above. Use the arrows to change it.</p>` : ""}
+    ${unitList().map((u,i,arr) => { const w = u.needs.filter(([id,n]) => !n.placed || !state.commitments[n.placed]); const pl = u.needs.length - w.length;
+      const arrows = arr.length > 1 ? `<span class="inline" style="gap:2px"><button class="ghost" data-rank="${esc(u.key)}" data-dir="-1" aria-label="Move up" ${i===0?"disabled":""}>▲</button><button class="ghost" data-rank="${esc(u.key)}" data-dir="1" aria-label="Move down" ${i===arr.length-1?"disabled":""}>▼</button></span>` : "";
+      if (u.org && u.needs.length > 1) return `<div style="border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid;gap:6px"><div class="inline" style="justify-content:space-between"><span><span class="tag moved">${i+1}</span> <b>${esc(u.org)}</b> <span class="help">${u.needs.length} groups${pl?`, ${pl} on the calendar`:""}</span></span><span class="inline">${arrows}<button data-orgedit="${esc(u.org)}">Edit all</button><button class="danger" data-orgdel="${esc(u.org)}">Delete all</button></span></div>
+        ${w.map(([id,n]) => `<div class="item" style="--c:${n.hue}"><div class="nm">${esc(n.name)} <button class="ghost" data-needit="${id}">Edit</button></div><div class="meta">${needMeta(n)}</div>${existingHtml(n)}</div>`).join("")}</div>`;
+      const [id,n] = u.needs[0];
+      return `<div class="item" style="--c:${n.hue}"><div class="nm" style="justify-content:space-between"><span><span class="tag moved">${i+1}</span> ${esc(n.name)} ${w.length?"":'<span class="tag hol">on the calendar</span>'}</span><span class="inline">${arrows}<button class="ghost" data-needit="${id}">Edit</button></span></div><div class="meta">${needMeta(n)}</div>${w.length?existingHtml(n):""}</div>`; }).join("")}
+    ${waiting.length ? `<div><button class="primary" id="n_suggest" style="width:100%;padding:12px">Suggest slots and show them on the calendar</button><p class="help">Works around everything on the calendar right now: fixed commitments, agreed dates, leave and bank holidays. You then accept or change each one on the calendar itself.</p></div>` : ""}
+    ${placed.length ? `<hr><b>Already on the calendar</b>` + placed.map(([id,n]) => { const cm = state.commitments[n.placed]; return `<div class="item" style="--c:${n.hue}"><div class="nm">${esc(n.name)}</div><div class="meta">${cm.kind==="monthly" ? nthLabel(cm.nth, cm.day) : DOW[cm.day]} ${cm.start}–${cm.end}${cm.kind==="monthly" ? "" : `, first on-week ${uk(cm.date)}`}${cm.until?`, until ${uk(cm.until)}`:""}</div><div class="acts"><button data-replan="${id}">Suggest again</button><button class="ghost" data-needit="${id}">Edit need</button></div></div>`; }).join("") + `<p class="help">Suggest again takes it off the calendar and offers fresh slots. To nudge a single session, tap it on the calendar.</p>` : ""}`;
+  openSheet("Plan clients", h);
+  $("hform").onsubmit = async e => { e.preventDefault(); const days = [...$("hform").querySelectorAll("input[name=d]:checked")].map(x=>Number(x.value)); const travel = { ...(c.travel||{}) }; $("hform").querySelectorAll("[data-travel]").forEach(inp => { travel[inp.dataset.travel] = inp.value === "" ? "" : Number(inp.value); }); await save("settings","main",{days, start:$("h_start").value, end:$("h_end").value, mixFlag:$("h_mix").checked, travel}); planSheet(o); };
+  $("n_add").onclick = () => needForm(null);
+  const sg = $("n_suggest"); if (sg) sg.onclick = suggestAll;
+}
+function needForm(id, org){
+  const c = cfg();
+  const orgNeeds = org ? Object.entries(state.needs).filter(([k,m]) => m.org === org).sort((a,b) => a[1].name.localeCompare(b[1].name, undefined, {numeric:true})) : [];
+  if (org && !orgNeeds.length) { planSheet(); return; }
+  const n = org ? { ...orgNeeds[0][1], name: org } : (id && state.needs[id]) || { name:"", hue:HUES[(Object.keys(state.needs).length+3) % HUES.length], mins:120, gap:0, travel:0, rep:"cycle", nth:"any", on:1, off:0, days:[], earliest:"", latest:"", pfrom:"", puntil:"", placed:"" };
+  const isPlaced = org ? orgNeeds.some(([k,m]) => m.placed && state.commitments[m.placed]) : !!(id && n.placed && state.commitments[n.placed]);
+  const roundOff = n.span ? Math.max(0, (Number(n.off)||0) - Number(n.span) + 1) : "";
+  openSheet(org ? `Edit all ${orgNeeds.length} groups` : id ? "Edit need" : "Add an RP group or client", `<form id="nform" style="display:grid;gap:10px">
+    ${isPlaced ? `<div class="note"><span class="tag moved">Placed</span> ${org ? "Some of these are on the calendar. Saving takes them all off and suggests again." : "This one is on the calendar. Saving changes takes it off and suggests slots again."}</div>` : ""}${org ? `<p class="help">Changes here apply to every group of ${esc(org)}. Change the number to add or drop groups (dropped from the end).</p>` : ""}
+    <div class="field"><label for="n_name">${org?"Organisation":id?"Group or client":"Organisation, group or client"}</label><input id="n_name" required value="${esc(n.name)}" placeholder="e.g. Sussex Partnership"></div>
+    ${(id && !org)?"":`<div class="row"><div class="field"><label for="n_count">How many groups? (1 for a single group or client)</label><input id="n_count" type="number" min="1" max="30" value="${org?orgNeeds.length:1}"></div><div class="field"><label for="n_span">Weeks of groups in a round</label><input id="n_span" type="number" min="1" max="12" value="${esc(n.span||"")}" placeholder="e.g. 3"></div><div class="field"><label for="n_roundoff">Weeks off after the round</label><input id="n_roundoff" type="number" min="0" max="26" value="${esc(roundOff)}" placeholder="e.g. 3"></div></div><p class="help">For example 11 groups, spread over 3 weeks, then 3 weeks off from that organisation. One need is made per group (Group 1, Group 2 and so on), each meeting once a round, and the weeks on and off below are filled in for you.</p>`}
+    <div class="field"><label for="n_loc">Location (optional)</label><input id="n_loc" list="loclist" value="${esc(n.loc||"")}" placeholder="e.g. CGL Brighton, YMCA, online"><datalist id="loclist">${[...new Set([...Object.values(state.needs), ...Object.values(state.commitments)].map(x => x.loc).filter(Boolean))].map(l => `<option value="${esc(l)}">`).join("")}</datalist><p class="help">Same-location groups are nudged onto the same days. Two locations on one day are allowed only when the gap covers the travel time set under Will's hours; otherwise the day is marked amber and suggestions avoid it.</p></div>
+    <div class="row"><div class="field"><label for="n_mins">Length (min)</label><input id="n_mins" type="number" min="15" step="5" value="${n.mins}"></div><div class="field"><label for="n_travel">Travel before (min)</label><input id="n_travel" type="number" min="0" step="5" value="${n.travel||0}"></div><div class="field"><label for="n_gap">Gap after (min)</label><input id="n_gap" type="number" min="0" step="5" value="${n.gap||0}"></div>
+</div>
+    <div class="row"><div class="field"><label for="n_rep">Repeats</label><select id="n_rep"><option value="cycle" ${n.rep!=="monthly"?"selected":""}>Weeks on / weeks off</option><option value="monthly" ${n.rep==="monthly"?"selected":""}>Once a month (same weekday)</option></select></div>
+      <div class="field" data-rep="cycle"><label for="n_on">Weeks on</label><input id="n_on" type="number" min="1" max="26" value="${n.on}"></div><div class="field" data-rep="cycle"><label for="n_off">Weeks off</label><input id="n_off" type="number" min="0" max="26" value="${n.off}"></div>
+      <div class="field" data-rep="cycle"><label for="n_pmin">Or repeats every (weeks, from)</label><input id="n_pmin" type="number" min="1" max="26" value="${esc(n.pmin||"")}" placeholder="4"></div><div class="field" data-rep="cycle"><label for="n_pmax">to</label><input id="n_pmax" type="number" min="1" max="26" value="${esc(n.pmax||"")}" placeholder="6"></div>
+      <div class="field" data-rep="monthly"><label for="n_nth">Which one</label><select id="n_nth">${[["any","Let the page choose"],[1,"1st"],[2,"2nd"],[3,"3rd"],[4,"4th"],[-1,"Last"]].map(([v,l]) => `<option value="${v}" ${String(n.nth||"any")===String(v)?"selected":""}>${l}</option>`).join("")}</select></div></div>
+    <p class="help">Weeks on and off are per group. A group that meets once per round, where the round is 3 weeks and then 3 weeks off, is 1 on and 5 off (filled in for you above). Every week is 1 and 0, fortnightly 1 and 1. Monthly means the same weekday each month. For a new client whose gap can flex, fill in "repeats every 4 to 6 weeks" and the page picks whichever length fits best around everything else; weeks off is then worked out from the pick.</p>
+    <div class="row"><div class="field"><label for="n_pf">Plan from (blank = this week)</label><input id="n_pf" type="date" value="${esc(n.pfrom||"")}"></div><div class="field"><label for="n_pu">Plan until (blank = ${HORIZON} weeks ahead)</label><input id="n_pu" type="date" value="${esc(n.puntil||"")}"></div></div>
+    <p class="help">The dates this group runs between, for example a term or a contract. Suggestions only count sessions inside them, and the calendar entry stops at the end date.</p>
+    <div class="field"><label>Days they can do (none ticked = any of your working days)</label><div class="checks">${DOW.map((d,i)=>`<label><input type="checkbox" name="d" value="${i}" ${(n.days||[]).includes(i)?"checked":""}>${d}</label>`).join("")}</div></div>
+    <div class="row"><div class="field"><label for="n_e">Earliest they can start (blank = ${c.start})</label><input id="n_e" type="time" value="${esc(n.earliest)}"></div><div class="field"><label for="n_l">Latest they can finish (blank = ${c.end})</label><input id="n_l" type="time" value="${esc(n.latest)}"></div></div>
+    <div class="field"><label>Colour</label><div class="swatches">${HUES.map(h => `<button type="button" data-hue="${h}" style="--c:${h}" aria-pressed="${h===n.hue}" aria-label="colour"></button>`).join("")}</div></div>
+    <div class="inline"><button class="primary" type="submit">${org?(isPlaced?"Save all and suggest again":"Save all"):id?(isPlaced?"Save and suggest again on the calendar":"Save"):"Add"}</button>${(id && !org)?`<button type="button" class="danger" id="n_del">Delete need</button>`:""}<button type="button" id="n_back">Back</button></div></form>`);
+  const f = $("nform");
+  f.querySelectorAll("[data-hue]").forEach(b => b.addEventListener("click", () => { f.querySelectorAll("[data-hue]").forEach(x => x.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); }));
+  $("n_back").onclick = () => planSheet();
+  const syncRep = () => { const r = $("n_rep").value; f.querySelectorAll("[data-rep]").forEach(el => el.hidden = el.dataset.rep !== r); };
+  $("n_rep").onchange = syncRep; syncRep();
+  const roundSync = () => { const sp = $("n_span"), ro = $("n_roundoff"); if (!sp || !sp.value) return; const S = Number(sp.value)||1, off = Number(ro.value)||0; $("n_rep").value="cycle"; $("n_on").value = 1; $("n_off").value = S + off - 1; syncRep(); };
+  const spEl = $("n_span"), roEl = $("n_roundoff"); if (spEl){ spEl.oninput = roundSync; roEl.oninput = roundSync; }
+  if (id && !org) $("n_del").onclick = async () => { closeSheet(); if (isPlaced) await unplace(id); await remove("needs", id); planSheet(); };
+  f.onsubmit = async e => { e.preventDefault();
+    const pf = $("n_pf").value, pu = $("n_pu").value;
+    if (pf && pu && pu < pf){ banner("Plan until must be after Plan from."); return; }
+    { const a = Number($("n_pmin").value), b = Number($("n_pmax").value); if ((a && !b) || (!a && b)){ banner("Fill in both ends of \"repeats every\", or leave both blank."); return; } if (a && b && b < a){ banner("\"Repeats every\": the second number must be the larger."); return; } }
+    const data = { name:$("n_name").value.trim(), hue:(f.querySelector("[data-hue][aria-pressed='true']")||{}).dataset.hue||HUES[0], mins:Number($("n_mins").value)||120, gap:Number($("n_gap").value)||0, travel:Number($("n_travel").value)||0, loc:$("n_loc").value.trim(), rep:$("n_rep").value, nth:$("n_nth").value, pmin:$("n_pmin").value, pmax:$("n_pmax").value, span:(id ? (n.span||"") : ($("n_span").value||"")), on:Number($("n_on").value)||1, off:Number($("n_off").value)||0,
+      days:[...f.querySelectorAll("input[name=d]:checked")].map(x=>Number(x.value)), earliest:$("n_e").value, latest:$("n_l").value, pfrom:pf, puntil:pu, placed:n.placed||"", org:n.org||"" };
+    if (!data.name) return;
+    banner("");
+    const count = (id && !org) ? 1 : Math.max(1, Number($("n_count").value)||1);
+    if (org){
+      const sp = $("n_span").value; if (sp){ const S = Number(sp)||1, ro = Number($("n_roundoff").value)||0; data.on = 1; data.off = S + ro - 1; data.rep = "cycle"; }
+      data.span = sp || "";
+      const newName = data.name;
+      let anyPlaced = false;
+      for (let i=0;i<orgNeeds.length;i++){
+        const [k,m] = orgNeeds[i];
+        if (i >= count){ await unplace(k); await remove("needs", k); continue; }
+        if (m.placed && state.commitments[m.placed]){ anyPlaced = true; await unplace(k); }
+        await save("needs", k, { ...m, ...data, name: `${newName}: Group ${i+1}`, org: newName, hue: m.hue, placed: "" });
+      }
+      for (let i=orgNeeds.length;i<count;i++) await save("needs", uid("n"), { ...data, name: `${newName}: Group ${i+1}`, org: newName, hue: HUES[(HUES.indexOf(data.hue)+i) % HUES.length], placed: "" });
+      if (anyPlaced) suggestAll(); else planSheet();
+      return;
+    }
+    if (!id && $("n_span").value){ const S = Number($("n_span").value)||1, ro = Number($("n_roundoff").value)||0; data.on = 1; data.off = S + ro - 1; data.rep = "cycle"; }
+    if (id && isPlaced){ await unplace(id); data.placed = ""; await save("needs", id, data); suggestAll(); return; }
+    if (!id){ data.rank = unitList().length + 1; }
+    if (count === 1){ await save("needs", id || uid("n"), data); }
+    else { for (let i=1;i<=count;i++) await save("needs", uid("n"), { ...data, name: `${data.name}: Group ${i}`, org: data.name, hue: HUES[(HUES.indexOf(data.hue)+i-1) % HUES.length] }); }
+    planSheet(); };
+}
+async function unplace(nid){
+  const n = state.needs[nid]; if (!n) return;
+  const cid = n.placed;
+  if (cid && state.commitments[cid]){ for (const [k,x] of Object.entries(state.exceptions)) if (x.cid===cid) await remove("exceptions", k); await remove("commitments", cid); }
+}
+async function useOption(nid, o, quiet){
+  const n = state.needs[nid]; if (!n) return;
+  const cid = uid("c");
+  await save("commitments", cid, { name:n.name, hue:n.hue, kind:o.nth != null ? "monthly" : "cycle", loc:n.loc||"", nth:o.nth != null ? Number(o.nth) : 1, day:Number(o.day), start:o.start, end:o.end, date:o.anchor, on:n.on, off:(o.off != null ? Number(o.off) : n.off), from:o.from||n.pfrom||"", until:n.puntil||"", notes:((n.travel||n.gap)?`${n.travel?n.travel+" min travel + ":""}${n.mins} min session${n.gap?" + "+n.gap+" min gap":""}. `:"")+"Placed by Plan clients", needId:nid });
+  await save("needs", nid, { ...n, placed:cid });
+  if (!quiet) planSheet();
+}
+async function replan(nid){
+  const n = state.needs[nid]; if (!n) return;
+  await unplace(nid);
+  await save("needs", nid, { ...n, placed:"" });
+  suggestAll();
+}
+
+// ---------- walkthrough ----------
+function walkthrough(){
+  const fixed = Object.values(state.commitments).some(c => !c.needId && !/^Example:/.test(c.name));
+  const hours = !!state.settings.main;
+  const needs = Object.keys(state.needs).length > 0;
+  const placedAny = Object.values(state.needs).some(n => n.placed && state.commitments[n.placed]);
+  const steps = [
+    { done: fixed, t:"Put in the things that can't move", p:"Uni days and placement first. Pick \"Every week\" for a lecture or placement day, set the day and times, and add it. One entry per regular thing. A group whose dates are already agreed goes in here too: pattern \"Weeks on / weeks off\" if it runs in blocks, or \"Agreed dates\" to paste the list. Leave the other reflective practice groups and in-person clients out for now: the page will place those for you.", b:"Add uni or placement", f:() => editCommitment(null) },
+    { done: hours, t:"Tell it your hours", p:"Tick the days you work and set your earliest start and latest finish. Suggestions only ever land inside these.", b:"Set my hours", f:() => { planSheet(); const d = $("sheetbody").querySelector("details"); if (d) d.open = true; } },
+    { done: needs, t:"Add your first organisation or client", p:"For an organisation: its name, how many groups, how many weeks of groups in a round, how many weeks off after, its location, and the days and times they can do. One need is made per group and the round repeats. For an in-person client: name, 50 minutes plus any gap, every week (1 on, 0 off). For a new RP group whose gap can flex, type repeats every 4 to 6 weeks and the page finds where it fits.", b:"Add an organisation or client", f:() => needForm(null) },
+    { done: placedAny, t:"Pick a slot", p:"Once everything is in, press Suggest slots. The page shows the best slot on three different days inside each group's dates. Each one says whether it clashes and whether it lands on a bank holiday. Tap \"Use this\" and it goes on the calendar. Add the next group and its suggestions already work around the first.", b:"See suggestions", f:planSheet },
+    { done: false, t:"Day to day", p:"Tap any day to skip a session, move it, or pause something over a date range (reading week, Christmas). Add leave with the Leave button: the days are hatched and anything on them is flagged. Red outline means a clash, purple means a bank holiday. The list at the top shows anything that needs a decision in the next 8 weeks.", b:"Open today", f:() => showDay(todayStr) },
+  ];
+  const next = steps.findIndex(x => !x.done);
+  openSheet("How to set it up", `<p class="help">Five steps. Ticks fill in as you go; come back here from the How to button any time.</p>` +
+    steps.map((x,i) => `<div class="step${x.done?" done":""}"><div class="n">${x.done?"✓":i+1}</div><div><h3>${x.t}</h3><p>${x.p}</p><button class="${i===next?"primary":""}" data-step="${i}">${x.b}</button></div></div>`).join(""));
+  $("sheetbody").querySelectorAll("[data-step]").forEach(b => b.onclick = () => steps[Number(b.dataset.step)].f());
+  try { localStorage.setItem("ww.tour","1"); } catch(e){}
+}
+function maybeTour(){
+  let seen = false; try { seen = !!localStorage.getItem("ww.tour"); } catch(e){}
+  if (!seen && !Object.keys(state.commitments).length && !Object.keys(state.needs).length) walkthrough();
+}
+
+// ---------- .ics import ----------
+// Reads VEVENTs. Weekly RRULEs become weekly or weeks-on/off items; identical sessions on the same weekday across
+// several weeks collapse into one weekly item with skips for the missing weeks; everything else becomes a one-off.
+function parseIcs(text){
+  const lines = text.replace(/\r\n?/g,"\n").split("\n");
+  const unfolded = [];
+  for (const l of lines){ if ((l.startsWith(" ") || l.startsWith("\t")) && unfolded.length) unfolded[unfolded.length-1] += l.slice(1); else unfolded.push(l); }
+  const events = []; let cur = null;
+  const unesc = s => s.replace(/\\n/g," ").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\").trim();
+  for (const l of unfolded){
+    if (l === "BEGIN:VEVENT"){ cur = {exdates:[]}; continue; }
+    if (l === "END:VEVENT"){ if (cur && cur.start) events.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    const i = l.indexOf(":"); if (i < 0) continue;
+    const left = l.slice(0,i), val = l.slice(i+1);
+    const [name, ...params] = left.split(";");
+    const p = {}; params.forEach(x => { const [k,v] = x.split("="); p[k] = v; });
+    if (name === "SUMMARY") cur.summary = unesc(val);
+    else if (name === "LOCATION") cur.location = unesc(val);
+    else if (name === "DTSTART") cur.start = icsDate(val, p);
+    else if (name === "DTEND") cur.end = icsDate(val, p);
+    else if (name === "RRULE") cur.rrule = Object.fromEntries(val.split(";").map(x => x.split("=")));
+    else if (name === "EXDATE") val.split(",").forEach(v => { const d = icsDate(v, p); if (d) cur.exdates.push(ymd(d.date)); });
+  }
+  return events;
+}
+function icsDate(val, p){
+  const m = val.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
+  if (!m) return null;
+  const [_, y, mo, d, hh, mm, ss, z] = m;
+  if (!hh || (p && p.VALUE === "DATE")) return { date: new Date(+y, mo-1, +d), allDay: true };
+  const date = z ? new Date(Date.UTC(+y, mo-1, +d, +hh, +mm, +(ss||0))) : new Date(+y, mo-1, +d, +hh, +mm, +(ss||0));
+  return { date, allDay: false };
+}
+const hhmm = d => pad(d.getHours())+":"+pad(d.getMinutes());
+const BYDAY = {MO:0,TU:1,WE:2,TH:3,FR:4,SA:5,SU:6};
+function icsToItems(events, srcName){
+  const items = [], exceptions = [], hueOf = {}; let hueN = 0;
+  const hue = name => { if (!hueOf[name]) hueOf[name] = HUES[(hueN++) % HUES.length]; return hueOf[name]; };
+  const base = ev => ({ name: ev.summary || "Imported", hue: hue(ev.summary||"Imported"), start: ev.start.allDay ? "" : hhmm(ev.start.date), end: (ev.end && !ev.start.allDay) ? hhmm(ev.end.date) : "", from:"", until:"", notes: [ev.location, "Imported from "+srcName].filter(Boolean).join(" · "), src:"ics", srcName });
+  const singles = [];
+  for (const ev of events){
+    const r = ev.rrule;
+    if (r && r.FREQ === "WEEKLY"){
+      const n = Math.max(1, Number(r.INTERVAL)||1);
+      const days = r.BYDAY ? r.BYDAY.split(",").map(x => BYDAY[x.slice(-2)]).filter(x => x!=null) : [dow(ev.start.date)];
+      let until = r.UNTIL ? ymd(icsDate(r.UNTIL, {}).date) : "";
+      if (!until && r.COUNT) until = ymd(addDays(ev.start.date, (Number(r.COUNT)-1)*7*n + 6));
+      for (const day of days){
+        const it = { ...base(ev), kind: n===1 ? "weekly" : "cycle", day, date: ymd(ev.start.date), on:1, off:n-1, from: ymd(ev.start.date), until };
+        const id = uid("c"); items.push([id, it]);
+        ev.exdates.forEach(x => exceptions.push([uid("x"), {cid:id, kind:"skip", date:x, note:"Not in the imported calendar"}]));
+      }
+    } else if (r) {
+      singles.push(ev); // repeat rule we do not understand: keep the first occurrence
+    } else singles.push(ev);
+  }
+  // collapse identical weekly sessions listed one by one
+  const groups = {};
+  for (const ev of singles){
+    const k = [ev.summary||"", dow(ev.start.date), ev.start.allDay ? "" : hhmm(ev.start.date), ev.end && !ev.start.allDay ? hhmm(ev.end.date) : ""].join("|");
+    (groups[k] = groups[k] || []).push(ev);
+  }
+  for (const g of Object.values(groups)){
+    g.sort((a,b) => a.start.date - b.start.date);
+    const span = weeksBetween(g[0].start.date, g[g.length-1].start.date) + 1;
+    if (g.length >= 3 && g.length >= span*0.5){
+      const ev = g[0], id = uid("c");
+      items.push([id, { ...base(ev), kind:"weekly", day: dow(ev.start.date), date: ymd(ev.start.date), on:1, off:0, from: ymd(ev.start.date), until: ymd(g[g.length-1].start.date) }]);
+      const have = new Set(g.map(e => ymd(e.start.date)));
+      for (let w=0; w<span; w++){ const s = ymd(addDays(ev.start.date, w*7)); if (!have.has(s)) exceptions.push([uid("x"), {cid:id, kind:"skip", date:s, note:"Not in the imported calendar"}]); }
+    } else {
+      for (const ev of g) items.push([uid("c"), { ...base(ev), kind:"once", day: dow(ev.start.date), date: ymd(ev.start.date), on:1, off:0 }]);
+    }
+  }
+  return { items, exceptions };
+}
+function importPreview(events, srcName){
+  const { items, exceptions } = icsToItems(events, srcName);
+  if (!items.length){ openSheet("Import", `<p>No events found in ${esc(srcName)}.</p>`); return; }
+  const desc = c => c.kind==="weekly" ? `every ${DOW[c.day]} ${timeLabel(c)}, ${uk(c.from)} to ${c.until?uk(c.until):"open"}` : c.kind==="cycle" ? `${DOW[c.day]} ${timeLabel(c)}, every ${c.off+1} weeks from ${uk(c.from)}` : `${uk(c.date)} ${timeLabel(c)}`;
+  const weekly = items.filter(([id,c]) => c.kind!=="once"), once = items.filter(([id,c]) => c.kind==="once");
+  openSheet("Import " + srcName, `<p class="help">${events.length} events read. ${weekly.length} repeating item${weekly.length===1?"":"s"}, ${once.length} one-off${once.length===1?"":"s"}${exceptions.length?`, ${exceptions.length} skipped week${exceptions.length===1?"":"s"}`:""}. Nothing is added until you confirm.</p>
+    <div class="commit-list">${items.slice(0,60).map(([id,c]) => `<div class="item" style="--c:${c.hue}"><div class="nm">${esc(c.name)}</div><div class="meta">${desc(c)}</div></div>`).join("")}${items.length>60?`<p class="help">and ${items.length-60} more</p>`:""}</div>
+    <div class="inline"><button class="primary" id="i_go">Add ${items.length} item${items.length===1?"":"s"}</button><button id="i_no">Cancel</button></div>`);
+  $("i_no").onclick = manage;
+  $("i_go").onclick = async () => {
+    $("i_go").disabled = true; $("i_go").textContent = "Adding…";
+    for (const [id,c] of items) await save("commitments", id, c);
+    for (const [id,x] of exceptions) await save("exceptions", id, x);
+    closeSheet();
+  };
+}
+async function loadExamples(){
+  const mon = ymd(mondayOf(new Date()));
+  const ex = [
+    { name:"Example: Uni", hue:HUES[0], kind:"weekly", day:1, start:"10:00", end:"16:00", date:"", on:1, off:0, from:"", until:"", notes:"" },
+    { name:"Example: Placement", hue:HUES[1], kind:"weekly", day:3, start:"09:00", end:"17:00", date:"", on:1, off:0, from:"", until:"", notes:"" },
+    { name:"Example: RP group A", hue:HUES[3], kind:"cycle", day:1, start:"13:00", end:"15:00", date:mon, on:3, off:3, from:"", until:"", notes:"Clashes with uni on purpose, to show the flag" },
+    { name:"Example: RP group B", hue:HUES[4], kind:"cycle", day:0, start:"18:00", end:"20:00", date:ymd(addDays(parse(mon),7)), on:3, off:3, from:"", until:"", notes:"" },
+  ];
+  for (const c of ex) await save("commitments", uid("c"), c);
+}
+
+// ---------- events ----------
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-date],[data-open],[data-edit],[data-skip],[data-move],[data-unskip],[data-unmove],[data-addonce],[data-pause],[data-del],[data-needit],[data-replan],[data-ghost],[data-accept],[data-dropick],[data-orgedit],[data-orgdel],[data-rank]");
+  if (!t) return;
+  if (t.dataset.ghost) { suggestionSheet(t.dataset.ghost); return; }
+  if (t.dataset.rank) { moveUnit(t.dataset.rank, Number(t.dataset.dir)); return; }
+  if (t.dataset.orgedit) { needForm(null, t.dataset.orgedit); return; }
+  if (t.dataset.orgdel) { orgDelete(t.dataset.orgdel); return; }
+  if (t.dataset.accept) { acceptPick(t.dataset.accept); return; }
+  if (t.dataset.dropick) { if (state.preview){ delete state.preview.picks[t.dataset.dropick]; } closeSheet(); if (state.preview && Object.keys(state.preview.picks).length) showPreview(); else clearPreview(); return; }
+  if (t.dataset.needit) { needForm(t.dataset.needit); return; }
+  if (t.dataset.replan) { replan(t.dataset.replan); return; }
+  if (t.dataset.edit !== undefined && !t.closest("form")) { editCommitment(t.dataset.edit); return; }
+  if (t.dataset.edit !== undefined) { editCommitment(t.dataset.edit); return; }
+  if (t.dataset.skip) { skipForm(t.dataset.skip, t.dataset.date); return; }
+  if (t.dataset.move) { moveForm(t.dataset.move, t.dataset.date); return; }
+  if (t.dataset.unskip) { const x = state.exceptions[t.dataset.unskip]; remove("exceptions", t.dataset.unskip).then(() => x && showDay(x.date)); return; }
+  if (t.dataset.unmove) { const x = state.exceptions[t.dataset.unmove]; remove("exceptions", t.dataset.unmove).then(() => x && showDay(x.date)); return; }
+  if (t.dataset.addonce) { addOnce(t.dataset.addonce); return; }
+  if (t.dataset.pause) { pauseForm(t.dataset.pause); return; }
+  if (t.dataset.del) { const id = t.dataset.del; const c = state.commitments[id];
+    openSheet("Delete " + c.name, `<p>Delete <b>${esc(c.name)}</b> and its exceptions? This cannot be undone.</p><div class="inline"><button class="danger" id="d_yes">Delete</button><button id="d_no">Keep it</button></div>`);
+    $("d_no").onclick = () => editCommitment(id);
+    $("d_yes").onclick = async () => { closeSheet(); for (const [k,x] of Object.entries(state.exceptions)) if (x.cid===id) await remove("exceptions", k); await remove("commitments", id); };
+    return; }
+  if (t.dataset.open) { showDay(t.dataset.open); return; }
+  if (t.dataset.date && !t.closest("#sheet")) { showDay(t.dataset.date); }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeSheet();
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches(".day,.aday,.commit-list .item")) { e.preventDefault(); e.target.click(); }
+});
+$("prev").onclick = () => { if (state.view==="weeks"){ weeksEarlier(4); window.scrollBy({ top:-320, behavior:"smooth" }); return; } else state.month = new Date(state.month.getFullYear(), state.month.getMonth()-1, 1); render(); };
+$("next").onclick = () => { if (state.view==="weeks"){ window.scrollBy({ top:320, behavior:"smooth" }); return; } else state.month = new Date(state.month.getFullYear(), state.month.getMonth()+1, 1); render(); };
+$("today").onclick = () => { state.month = new Date(new Date().getFullYear(), new Date().getMonth(), 1); state.weeksStart = null; state.weeksN = 0; render(); window.scrollTo({ top:0 }); };
+document.querySelectorAll("#viewseg button").forEach(b => b.onclick = () => { state.view = b.dataset.v; try { localStorage.setItem("ww.view", state.view); } catch(e){} render(); });
+$("addbtn").onclick = () => editCommitment(null);
+$("emptyadd").onclick = () => editCommitment(null);
+$("emptyplan").onclick = planSheet;
+$("emptyhow").onclick = walkthrough;
+$("howbtn").onclick = walkthrough;
+$("planbtn").onclick = planSheet;
+$("examples").onclick = loadExamples;
+$("manage").onclick = manage;
+$("leavebtn").onclick = () => leaveForm(null);
+$("closesheet").onclick = closeSheet;
+$("scrim").onclick = closeSheet;
+$("pb_clear").onclick = clearPreview;
+$("pb_useall").onclick = acceptAll;
+$("pb_back").onclick = () => { clearPreview(); planSheet(); };
+
+connect();
+})();
+</script>
+<script>if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+</body>
+</html>
